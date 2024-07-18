@@ -46,7 +46,7 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
 
 ## Warnings
 
-This is my personal project and isn't meant for general use. External packages have been liberally pulled in and may put your machine at risk. Documentation is non-existent (except this readme, of course). It's tightly coupled with my home network setup and would require changes to work anywhere else.
+This is my personal project and isn't meant for general use. External packages have been liberally pulled in and may put your machine at risk. Documentation is non-existent (except for what you're reading right now). It's tightly coupled with my home network setup and would require changes to work anywhere else.
 
 That being said, there is nothing stopping you from trying.
 
@@ -56,7 +56,7 @@ A few things to note:
 - TTS depends on the [AllTalk TTS](https://github.com/erew123/alltalk_tts). Go ahead and install it. It's awesome.
 - TTS pausing requires the microphone input in OBS to be called "Mic".
 - Configure OBS by creating a full-screen browser source that points to the overlay.html file (load it from the local filesystem - not from a server).
-- Bot was writting with Windows host and Linux target in mind. That being said, it should be relatively easy to adapt it to other setups.
+- Bot was written with Windows host and Linux target in mind. That being said, it should be relatively easy to adapt it to other setups.
 - Tobii gaze tracking requires compiling a C++ helper program. In OBS you should create a scene called "Main" with an image source called "Gaze".
 
 If you're OK with that and want to try it out, you can use these commands as a starting point:
