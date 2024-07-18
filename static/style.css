@@ -1,0 +1,160 @@
+html {
+  font-family: 'Comic Neue';
+  font-size: 40px;
+  color: white;
+  background: rgba(0, 0, 0, 0);
+  text-align: right;
+}
+
+@keyframes show {
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.muted {
+  font-weight: 400;
+}
+
+.chat_log {
+  margin: .2em 0;
+  text-shadow: 0 0 3px black, 0 0 5px black, 0 0 10px black;
+  animation: show 600ms 100ms cubic-bezier(0.38, 0.97, 0.56, 0.76) forwards;
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+.control_panel {
+  position: absolute;
+  font-size: .8em;
+  left: 0;
+  display: inline-block;
+  opacity: 0;
+  transform: scale(0%);
+  transition: transform 300ms, opacity 300ms;
+  padding: .2em 0;
+  border-radius: .5em;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.chat_log[data-author]:hover .control_panel {
+  transform: scale(100%);
+  opacity: 1;
+}
+
+button {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-size: 1em;
+  cursor: pointer;
+  border-radius: .3em;
+  background: linear-gradient(180deg, #4c4c4c, #333);
+  color: white;
+  border: .05em solid rgba(255, 255, 255, 0.5);
+  padding: 0 .2em;
+  margin: 0 .2em;
+  text-shadow: none;
+}
+
+button:hover {
+  background: linear-gradient(180deg, #6c6c6c, #555);
+}
+
+#chat>div.twitch>span:before,
+#chat>div.youtube>span:before,
+#chat>div.bot>span:before {
+  background-size: contain;
+  background-repeat: no-repeat;
+  vertical-align: middle;
+
+  width: 1em;
+  height: 1em;
+  content: "";
+  display: inline-block;
+  padding: 0;
+  margin: 0;
+}
+
+#chat>div.twitch>span:before {
+  background-image: url('twitch.svg');
+}
+
+#chat>div.bot>span:before {
+  background-image: url('bot.svg');
+  margin: 0 0.2em 0 0;
+  vertical-align: text-top;
+}
+
+#chat>div.youtube>span:before {
+  background-image: url('youtube.svg');
+  vertical-align: baseline;
+
+  margin: 0 0.1em;
+  height: calc(1em * 180 / 256);
+}
+
+.chat_log>span {
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 15px;
+  padding: .1em .2em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  line-height: 1.35em;
+}
+
+html,
+body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+#chat {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+#chat img.emoji {
+  max-width: 1.2em;
+  max-height: 1.2em;
+  vertical-align: middle;
+}
+
+#audio {
+  position: fixed;
+  bottom: 0;
+  left: 80px;
+  font: 44px "Belanosima Regular";
+  text-align: left;
+  vertical-align: middle;
+  width: calc(100vw - 160px);
+  height: 60px;
+  background: white;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Duplicate audio text over */
+#audio-highlight {
+  position: absolute;
+  left: -1px;
+  top: -1px;
+  background: -webkit-linear-gradient(#ffffbc, #e6bba5);
+  -webkit-background-clip: text;
+}
+
+#audio-fill {
+  position: absolute;
+  left: 0;
+  background: -webkit-linear-gradient(#ffa11e, #e65a2f);
+  -webkit-background-clip: text;
+}
+
+#audio-shadow {
+  position: absolute;
+  left: 1px;
+  top: 1px;
+  -webkit-text-fill-color: black;
+}
