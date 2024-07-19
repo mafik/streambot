@@ -22,11 +22,17 @@ function OnChatMessage(chat_entry) {
     color = chat_entry.author_color;
   }
   let text_span = document.createElement('span');
+  if ('avatar_url' in chat_entry) {
+    let avatar = document.createElement('img');
+    avatar.src = chat_entry.avatar_url;
+    avatar.classList.add('avatar');
+    text_span.appendChild(avatar);
+  }
   if ('author' in chat_entry) {
     chat_log.dataset.author = chat_entry.author;
-    text_span.innerHTML = '<strong style="color:' + color + '">' + chat_entry.author + '</strong>: ' + chat_entry.message;
+    text_span.innerHTML += '<strong style="color:' + color + '">' + chat_entry.author + '</strong>: ' + chat_entry.message;
   } else {
-    text_span.innerHTML = chat_entry.message;
+    text_span.innerHTML += chat_entry.message;
   }
 
   let control_panel = document.createElement('div');

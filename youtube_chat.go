@@ -75,6 +75,11 @@ type ContinuationChat struct {
 		TimeoutMs    int    `json:"timeoutMs"`
 	} `json:"invalidationContinuationData"`
 }
+type Thumbnail struct {
+	Url    string `json:"url"`
+	Width  int    `json:"width"`
+	Height int    `json:"height"`
+}
 type Actions struct {
 	AddChatItemAction struct {
 		Item struct {
@@ -84,7 +89,10 @@ type Actions struct {
 				} `json:"message"`
 				AuthorName struct {
 					SimpleText string `json:"simpleText"`
-				}
+				} `json:"authorName"`
+				AuthorPhoto struct {
+					Thumbnails []Thumbnail
+				} `json:"authorPhoto"`
 				TimestampUsec string `json:"timestampUsec"`
 			} `json:"liveChatTextMessageRenderer"`
 		} `json:"item"`
@@ -124,12 +132,6 @@ type ErrorResponse struct {
 		} `json:"errors"`
 		Status string `json:"status"`
 	} `json:"error"`
-}
-
-type ChatMessage struct {
-	AuthorName string
-	Message    string
-	Timestamp  time.Time
 }
 
 type InitialData struct {
@@ -182,7 +184,7 @@ func parseMicroSeconds(timeStampStr string) time.Time {
 	return time.Unix(sec, msec*int64(time.Millisecond))
 }
 
-func FetchChatMessages(initialContinuationInfo string, ytCfg YtCfg) ([]ChatMessage, string, int, error) {
+func FetchChatMessages(initialContinuationInfo string, ytCfg YtCfg) ([]ChatEntry, string, int, error) {
 	apiKey := ytCfg.INNERTUBE_API_KEY
 	continuationUrl := fmt.Sprintf(LIVE_CHAT_URL, API_TYPE, apiKey)
 	innertubeContext := ytCfg.INNERTUBE_CONTEXT
@@ -217,21 +219,28 @@ func FetchChatMessages(initialContinuationInfo string, ytCfg YtCfg) ([]ChatMessa
 	json.Unmarshal([]byte(string(body)), &chatMsgResp)
 	actions := chatMsgResp.ContinuationContents.LiveChatContinuation.Actions
 
-	chatMessages := []ChatMessage{}
+	chatMessages := []ChatEntry{}
 	for _, action := range actions {
 		liveChatTextMessageRenderer := action.AddChatItemAction.Item.LiveChatTextMessageRenderer
 		// Each chat message is seperated into multiple runs.
 		// Iterate through all runs and generate the chat message.
 		runs := liveChatTextMessageRenderer.Message.Runs
 		if len(runs) > 0 {
-			chatMessage := ChatMessage{}
-			authorName := liveChatTextMessageRenderer.AuthorName.SimpleText
-			chatMessage.Timestamp = parseMicroSeconds(liveChatTextMessageRenderer.TimestampUsec)
-			chatMessage.AuthorName = authorName
-			text := ""
+			chatMessage := ChatEntry{
+				Source:    "YouTube",
+				Author:    liveChatTextMessageRenderer.AuthorName.SimpleText,
+				timestamp: parseMicroSeconds(liveChatTextMessageRenderer.TimestampUsec),
+			}
+			bestSize := 0
+			for _, thumbnail := range liveChatTextMessageRenderer.AuthorPhoto.Thumbnails {
+				if thumbnail.Width > bestSize {
+					chatMessage.AvatarURL = thumbnail.Url
+					bestSize = thumbnail.Width
+				}
+			}
 			for _, run := range runs {
 				if run.Text != "" {
-					text += run.Text
+					chatMessage.Message += run.Text
 				} else {
 					if run.Emoji.IsCustomEmoji {
 						numberOfThumbnails := len(run.Emoji.Image.Thumbnails)
@@ -243,16 +252,15 @@ func FetchChatMessages(initialContinuationInfo string, ytCfg YtCfg) ([]ChatMessa
 						// Adding some whitespace around custom image URLs
 						// without the whitespace it would be difficult to parse these URLs
 						if numberOfThumbnails > 0 && numberOfThumbnails == 2 {
-							text += " " + run.Emoji.Image.Thumbnails[1].Url + " "
+							chatMessage.Message += " " + run.Emoji.Image.Thumbnails[1].Url + " "
 						} else if numberOfThumbnails == 1 {
-							text += " " + run.Emoji.Image.Thumbnails[0].Url + " "
+							chatMessage.Message += " " + run.Emoji.Image.Thumbnails[0].Url + " "
 						}
 					} else {
-						text += run.Emoji.EmojiId
+						chatMessage.Message += run.Emoji.EmojiId
 					}
 				}
 			}
-			chatMessage.Message = text
 			chatMessages = append(chatMessages, chatMessage)
 		}
 	}
@@ -412,13 +420,7 @@ func YouTubeBot() {
 				continue
 			}
 
-			for _, msg := range chat {
-				entry := ChatEntry{
-					Author:  msg.AuthorName,
-					Message: msg.Message,
-					Source:  "YouTube",
-				}
-
+			for _, entry := range chat {
 				entry.terminalMsg = fmt.Sprintf("  %s: %s\n", entry.Author, entry.Message)
 				entry.Message = html.EscapeString(entry.Message)
 				entry.Message = youtubeEmojiRegexp.ReplaceAllString(entry.Message, `<img src="$1" alt="YouTube emoji" class="emoji">`)

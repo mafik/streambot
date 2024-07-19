@@ -36,11 +36,20 @@ html {
   padding: .2em 0;
   border-radius: .5em;
   background: rgba(255, 255, 255, 0.5);
+  z-index: 99;
 }
 
 .chat_log[data-author]:hover .control_panel {
   transform: scale(100%);
   opacity: 1;
+}
+
+.avatar {
+  border-radius: 50%;
+  vertical-align: middle;
+  margin: 0 .2em 0 .1em;
+  margin-top: -100px;
+  transform: translateY(48px);
 }
 
 button {

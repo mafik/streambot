@@ -22,8 +22,7 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
 
 - On-stream display of aggregated chat from Twitch and YouTube
   - Twitch chat client with custom colors & emojis support
-  - YouTube chat client with emojis support
-  - ***TODO**: display YouTube avatars in chat*
+  - YouTube chat client with custom avatars & emojis support
   - Chat logging to a file
 - High-quality TTS for chat messages with stylized voices
   - Mindful delay of TTS messages while speaking

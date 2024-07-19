@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"os"
+	"time"
 
 	"github.com/fatih/color"
 )
@@ -13,6 +14,8 @@ type ChatEntry struct {
 	Message     string `json:"message"`
 	Source      string `json:"source,omitempty"`
 	AuthorColor string `json:"author_color,omitempty"`
+	AvatarURL   string `json:"avatar_url,omitempty"`
+	timestamp   time.Time
 	terminalMsg string
 	skipTTS     bool
 }
