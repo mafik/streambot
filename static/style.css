@@ -167,3 +167,112 @@ body {
   top: 1px;
   -webkit-text-fill-color: black;
 }
+
+:root {
+  --alert-width: 800px;
+  --alert-height: 400px;
+}
+
+#alert-content {
+  width: var(--alert-width);
+  flex: 0 0 auto;
+  word-break: break-all;
+  color: white;
+  font-family: 'Instrument Serif';
+}
+
+#alert-content .big {
+  font-size: 2em;
+  color: transparent;
+  -webkit-text-stroke: 1px white;
+  font-family: 'Belanosima';
+  text-shadow: 0 0 100px white;
+}
+
+#alert-content .letter {
+  color: var(--color);
+  border-color: white;
+}
+
+#alert-content .big .letter {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--color);
+  text-shadow: 0 0 100px var(--color);
+}
+
+#alert {
+  text-align: center;
+  position: fixed;
+  top: 10%;
+  left: calc(50% - 400px);
+  width: var(--alert-width);
+  border-radius: 40px;
+  height: var(--alert-height);
+  background: url(vintage_speckles.png);
+  background-position: 50% 0%;
+  background-size: 400px 300px;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  display: none;
+  box-shadow: 0 0 100px rgba(0, 0, 0, 0.5) inset, 5px 0px 0 #e65a2f, -5px 0px 0 #e65a2f;
+}
+
+:root {
+  --time: 8s;
+}
+
+.letter {
+  position: relative;
+  display: inline-block;
+  white-space: pre;
+  --color: white;
+}
+
+#alert.animated {
+  --expand-time: min(calc(var(--time) / 2), 3s);
+  display: flex;
+  animation:
+    expandAlert var(--expand-time) 0ms cubic-bezier(0.1, 1, 0, 1.1) forwards,
+    scrollBackground 5s linear infinite,
+    moveDown var(--time) 0ms cubic-bezier(0.5, 0.2, 0.5, 0.8) forwards,
+    expandAlert var(--expand-time) calc(var(--time) - var(--expand-time)) cubic-bezier(0.1, 1, 0, 1.1) reverse forwards;
+}
+
+@keyframes moveDown {
+  0% {
+    top: 5%;
+  }
+
+  100% {
+    top: 10%;
+  }
+}
+
+@keyframes scrollBackground {
+  0% {
+    background-position: 50% 0;
+  }
+
+  100% {
+    background-position: 50% -300px;
+  }
+}
+
+@keyframes expandAlert {
+  0% {
+    width: 0;
+    height: calc(1.2 * var(--alert-height));
+    transform: translateY(calc(-0.1 * var(--alert-height)));
+    left: 50%;
+  }
+
+  100% {
+    width: var(--alert-width);
+    height: var(--alert-height);
+    transform: translateY(0);
+    left: calc(50% - var(--alert-width) / 2);
+  }
+}

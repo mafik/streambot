@@ -35,7 +35,7 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
   - ***TODO**: field for changing stream title on YT and Twitch*
   - ***TODO**: field for changing stream notification on Twitch*
 - ***TODO**: automatic streaming notifications on Twitter and Mastodon*
-- ***TODO**: On-stream alerts*
+- On-stream alerts
   - ***TODO**: Twitch follows*
   - ***TODO**: YouTube subscriptions*
   - ***TODO**: GitHub sponsors*
@@ -67,3 +67,7 @@ go run .
 ```
 
 If you manage to improve anything, please send a PR!
+
+## Attribution
+
+- https://www.toptal.com/designers/subtlepatterns/

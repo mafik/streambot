@@ -6,6 +6,92 @@ function Reload() {
   chat.textContent = 'Reloading...';
   window.location.reload();
 }
+let alert_queue = [];
+function ShowNextAlert() {
+  let html = alert_queue[0];
+  let contentElement = document.getElementById('alert-content');
+  contentElement.innerHTML = html;
+
+  // Wrap each letter into a .letter span
+  let nodes_queue = [contentElement];
+  let n = 0;
+  while (nodes_queue.length > 0) {
+    let node = nodes_queue.shift();
+    if (node instanceof Text) {
+      for (let letter of node.data) {
+        let span = document.createElement('span');
+        span.classList.add('letter');
+        span.textContent = letter;
+        node.before(span);
+        ++n;
+      }
+      node.remove();
+    } else {
+      for (let child of node.childNodes) {
+        nodes_queue.push(child);
+      }
+    }
+  }
+  let appearMillis = 3000;
+  let appearLetterDelay = 50;
+  let time1 = n * appearLetterDelay + appearMillis;
+  anime.timeline({ loop: false })
+    .add({
+      targets: '#alert-content .letter',
+      translateX: [50, 0],
+      skewX: [-15, 0],
+      opacity: [0, 1],
+      easing: "easeOutExpo",
+      duration: appearMillis,
+      delay: (el, i) => appearLetterDelay * i
+    });
+
+  let highlightLetterMillis = 100;
+  let highlightOverlap = 15; // Number of letters to highlight at the same time
+  let time2 = highlightLetterMillis * highlightOverlap + highlightLetterMillis * n;
+  anime.timeline({ loop: false }).add({
+    targets: '#alert-content .letter',
+    marginLeft: [0, 5, 0],
+    easing: "easeInOutSine",
+    borderColor: ['#ffffff', '#e65a2f', '#ffffff'],
+    duration: highlightLetterMillis * highlightOverlap,
+    delay: (el, i) => highlightLetterMillis * i,
+    update: (anim) => {
+      for (let animation of anim.animations) {
+        if (animation.type != 'css') {
+          continue;
+        }
+        if (animation.property == 'borderColor') {
+          animation.animatable.target.style.setProperty('--color', animation.currentValue);
+        }
+      }
+    },
+  });
+
+  let time = Math.max(time1, time2) + 1000;
+
+  let alert = document.getElementById('alert');
+  alert.style.setProperty('--time', time + 'ms');
+  alert.classList.add('animated');
+  alert.addEventListener('animationend', function (ev) {
+    if (ev.animationName == 'moveDown') {
+      alert.classList.remove('animated');
+      contentElement.replaceChildren();
+      alert_queue.shift();
+      if (alert_queue.length > 0) {
+        // setTimeout is needed to allow the browser to remove animation from DOM
+        setTimeout(ShowNextAlert, 0);
+      }
+    }
+  });
+}
+
+function ShowAlert(html) {
+  alert_queue.push(html);
+  if (alert_queue.length == 1) {
+    ShowNextAlert();
+  }
+}
 function SetAudioMessage(message) {
   document.getElementById('audio-highlight').textContent = message;
   document.getElementById('audio-fill').textContent = message;

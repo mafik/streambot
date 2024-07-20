@@ -129,6 +129,7 @@ func main() {
 			for _, entry := range chat_log {
 				client.Call("OnChatMessage", entry)
 			}
+			client.Call("ShowAlert", `<div class="big">Sample Alert</div>This is just a sample alert!`)
 		case msg := <-MainChannel:
 			switch t := msg.(type) {
 			case ChatEntry:
