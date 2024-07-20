@@ -95,6 +95,10 @@ func OBS() {
 					col.Println("Unknown message:", t)
 				}
 			case obsEvent := <-obs.IncomingEvents:
+				if obsEvent == nil {
+					col.Println("OBS disconnected")
+					break
+				}
 				switch t := obsEvent.(type) {
 				case *events.InputVolumeMeters:
 					for _, input := range t.Inputs {
