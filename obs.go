@@ -110,7 +110,7 @@ func OBS() {
 						if magnitudeDb > -40 {
 							lastMicActivity = time.Now()
 							MicIsSilent.Store(false)
-						} else if time.Since(lastMicActivity) > 5*time.Second {
+						} else if time.Since(lastMicActivity) > 3*time.Second {
 							MicIsSilent.Store(true)
 						}
 					}
