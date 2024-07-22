@@ -10,14 +10,15 @@ import (
 )
 
 type ChatEntry struct {
-	Author      string `json:"author,omitempty"`
-	Message     string `json:"message"`
-	Source      string `json:"source,omitempty"`
-	AuthorColor string `json:"author_color,omitempty"`
-	AvatarURL   string `json:"avatar_url,omitempty"`
-	timestamp   time.Time
-	terminalMsg string
-	skipTTS     bool
+	Author       string `json:"author,omitempty"`
+	Message      string `json:"message"`
+	Source       string `json:"source,omitempty"`
+	AuthorColor  string `json:"author_color,omitempty"`
+	AvatarURL    string `json:"avatar_url,omitempty"`
+	TwitchUserId string `json:"twitch_user_id,omitempty"`
+	timestamp    time.Time
+	terminalMsg  string
+	skipTTS      bool
 }
 
 var chat_color *color.Color = color.New(color.FgWhite).Add(color.Bold)

@@ -114,6 +114,9 @@ function OnChatMessage(chat_entry) {
     avatar.classList.add('avatar');
     text_span.appendChild(avatar);
   }
+  if ('twitch_user_id' in chat_entry) {
+    chat_log.dataset.twitch_user_id = chat_entry.twitch_user_id;
+  }
   if ('author' in chat_entry) {
     chat_log.dataset.author = chat_entry.author;
     text_span.innerHTML += '<strong style="color:' + color + '">' + chat_entry.author + '</strong>: ' + chat_entry.message;
@@ -130,13 +133,21 @@ function OnChatMessage(chat_entry) {
     ws.send(JSON.stringify({ call: 'ToggleMuted', args: [chat_entry.author] }));
   };
   control_panel.appendChild(mute_button);
-  let ban_button = document.createElement('button');
-  ban_button.textContent = '💀';
-  ban_button.title = 'Ban ' + chat_entry.author;
-  ban_button.onclick = function () {
-    ws.send(JSON.stringify({ call: 'Ban', args: [chat_entry.author] }));
-  };
-  control_panel.appendChild(ban_button);
+  if ('twitch_user_id' in chat_entry) {
+    let ban_button = document.createElement('button');
+    let twitch_user_id = chat_entry.twitch_user_id;
+    let user_name = chat_entry.author;
+    ban_button.textContent = '💀';
+    ban_button.title = 'Ban ' + user_name;
+    ban_button.onclick = function () {
+      ban_button.innerHTML = 'Ban <strong>' + user_name + '</strong>? ✅';
+      ban_button.title = 'Are you sure you want to ban ' + user_name + '?';
+      ban_button.onclick = function () {
+        ws.send(JSON.stringify({ call: 'BanTwitch', args: [twitch_user_id, user_name] }));
+      };
+    };
+    control_panel.appendChild(ban_button);
+  }
   chat_log.appendChild(control_panel);
   chat_log.appendChild(text_span);
 

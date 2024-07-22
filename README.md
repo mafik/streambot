@@ -28,12 +28,14 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
   - Mindful delay of TTS messages while speaking
 - Control panel available by opening `control.html` (locally or through `http://IP:3447/control.html`)
   - Button for muting TTS for specific users
+  - Button for banning users on Twitch
   - ***TODO**: button for deleting individual messages*
-  - ***TODO**: button for banning users*
   - ***TODO**: button for timing users out*
+  - ***TODO**: button for banning users on YT*
   - ***TODO**: counters with counts of viewers on YT and Twitch*
   - ***TODO**: field for changing stream title on YT and Twitch*
   - ***TODO**: field for changing stream notification on Twitch*
+  - ***TODO**: auto-ban regexps*
 - ***TODO**: automatic streaming notifications on Twitter and Mastodon*
 - On-stream alerts
   - ***TODO**: Twitch follows*

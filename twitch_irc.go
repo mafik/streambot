@@ -15,6 +15,9 @@ import (
 const twitchBotUsername = "bot_maf"
 const twitchBroadcasterUsername = "maf_pl"
 
+var twitchBotID string
+var twitchBroadcasterID string
+
 var TwitchIRCChannel = make(chan interface{})
 var twitchEmotes map[string]string
 
@@ -77,10 +80,11 @@ func TwitchIRCBot() {
 		})
 		irc.OnNewMessage(func(channel string, user twitch.User, message twitch.Message) {
 			entry := ChatEntry{
-				Author:      user.DisplayName,
-				Message:     message.Text,
-				Source:      "Twitch",
-				AuthorColor: user.Color,
+				Author:       user.DisplayName,
+				Message:      message.Text,
+				Source:       "Twitch",
+				AuthorColor:  user.Color,
+				TwitchUserId: user.UserID,
 			}
 
 			entry.terminalMsg = fmt.Sprintf("  %s: %s\n", entry.Author, entry.Message)

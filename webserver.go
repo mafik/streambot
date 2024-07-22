@@ -109,13 +109,9 @@ type JavaScriptMessage struct {
 
 type JavaScriptHandler func(...string)
 
-func Ban(args ...string) {
-	fmt.Println("Ban", args[0])
-}
-
 var JavaScriptHandlers = map[string]JavaScriptHandler{
 	"ToggleMuted": ToggleMuted,
-	"Ban":         Ban,
+	"BanTwitch":   BanTwitch,
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -214,6 +210,8 @@ func StartWebserver(OnNewClient chan *WebsocketClient) *WebsocketHub {
 
 	fs := http.FileServer(http.Dir("./"))
 	http.Handle("/", fs)
+
+	http.HandleFunc("/twitch-auth", OnTwitchAuth)
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
