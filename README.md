@@ -38,9 +38,12 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
   - ***TODO**: auto-ban regexps*
 - ***TODO**: automatic streaming notifications on Twitter and Mastodon*
 - On-stream alerts
-  - ***TODO**: Twitch follows*
+  - Twitch follows
+  - ***TODO**: TTS should read out alerts out loud*
+  - ***TODO**: Play a sound when an alert starts*
   - ***TODO**: YouTube subscriptions*
   - ***TODO**: GitHub sponsors*
+  - ***TODO**: Twitch raids*
 - ***TODO**: OBS scene transition when moving the cursor to a different screen (for drawing in Krita)*
 - ***TODO**: Ability for users to change their voice*
 - ***TODO**: Animated avatars for stream viewers*

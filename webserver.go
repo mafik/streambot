@@ -20,6 +20,8 @@ const (
 
 	// Send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
+
+	webserverPort = 3447
 )
 
 type WebsocketHub struct {
@@ -141,12 +143,18 @@ func (c *WebsocketClient) readPump() {
 			fmt.Println(err)
 			continue
 		}
-		if handler, ok := JavaScriptHandlers[message.Call]; ok {
-			handler(message.Args...)
-		} else {
-			fmt.Printf("Unknown JavaScript method: %s(%v)\n", message.Call, message.Args)
+		if IsAuthorized(c.conn.RemoteAddr().String()) {
+			if handler, ok := JavaScriptHandlers[message.Call]; ok {
+				handler(message.Args...)
+			} else {
+				fmt.Printf("Unknown JavaScript method: %s(%v)\n", message.Call, message.Args)
+			}
 		}
 	}
+}
+
+func OnTwitchWebhook(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Hello twitch!"))
 }
 
 func StartWebserver(OnNewClient chan *WebsocketClient) *WebsocketHub {
@@ -172,16 +180,6 @@ func StartWebserver(OnNewClient chan *WebsocketClient) *WebsocketHub {
 			return
 		}
 		defer watcher.Close()
-		err = watcher.Add("overlay.html")
-		if err != nil {
-			fmt.Println("watcher.Add:", err)
-			return
-		}
-		err = watcher.Add("control.html")
-		if err != nil {
-			fmt.Println("watcher.Add:", err)
-			return
-		}
 		err = watcher.Add("static/")
 		if err != nil {
 			fmt.Println("watcher.Add:", err)
@@ -208,10 +206,10 @@ func StartWebserver(OnNewClient chan *WebsocketClient) *WebsocketHub {
 		}
 	}()
 
-	fs := http.FileServer(http.Dir("./"))
-	http.Handle("/", fs)
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 
 	http.HandleFunc("/twitch-auth", OnTwitchAuth)
+	http.HandleFunc("/webhook/twitch", OnTwitchWebhook)
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
@@ -229,7 +227,7 @@ func StartWebserver(OnNewClient chan *WebsocketClient) *WebsocketHub {
 	})
 
 	go func() {
-		err := http.ListenAndServe("0.0.0.0:3447", nil)
+		err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", webserverPort), nil)
 		if err != nil {
 			fmt.Println("ListenAndServe: ", err)
 		}

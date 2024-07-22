@@ -54,7 +54,7 @@ func ToggleMuted(args ...string) {
 			delete(muted, user)
 			MainOnChatEntry(ChatEntry{
 				Source:  "Bot",
-				Message: fmt.Sprintf(` <img class="emoji" src="static/unmuted.svg"> <strong>%s</strong>`, user),
+				Message: fmt.Sprintf(` <img class="emoji" src="/static/unmuted.svg"> <strong>%s</strong>`, user),
 				skipTTS: true,
 			})
 		} else {
@@ -62,7 +62,7 @@ func ToggleMuted(args ...string) {
 			muted[user] = true
 			MainOnChatEntry(ChatEntry{
 				Source:  "Bot",
-				Message: fmt.Sprintf(` <img class="emoji" src="static/muted.svg"> <strong>%s</strong>`, user),
+				Message: fmt.Sprintf(` <img class="emoji" src="/static/muted.svg"> <strong>%s</strong>`, user),
 				skipTTS: true,
 			})
 		}

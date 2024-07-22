@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"path"
 	"streambot/backoff"
@@ -14,6 +15,7 @@ var accessTokenPath = path.Join(baseDir, "secrets", "twitch_access_token.txt")
 var refreshTokenPath = path.Join(baseDir, "secrets", "twitch_refresh_token.txt")
 var twitchColor = color.New(color.FgMagenta)
 var twitchAuthUrl string
+var twitchWebhookSecret string
 
 func OnUserAccessTokenRefreshed(newAccessToken, newRefreshToken string) {
 	twitchColor.Println("User access token refreshed! If this spams the console, visit this URL using bot account to authorize it:", twitchAuthUrl)
@@ -21,8 +23,24 @@ func OnUserAccessTokenRefreshed(newAccessToken, newRefreshToken string) {
 	WriteStringToFile(refreshTokenPath, newRefreshToken)
 }
 
+func IsAuthorized(addr string) bool {
+	// TODO: use cookies or something like that to authorize
+	ip_str, _, _ := net.SplitHostPort(addr)
+	return ip_str == "10.0.0.8" || ip_str == "10.0.0.3" || ip_str == "::1" || ip_str == "10.0.0.27"
+}
+
 func OnTwitchAuth(w http.ResponseWriter, r *http.Request) {
+	if !IsAuthorized(r.RemoteAddr) {
+		w.WriteHeader(401)
+		w.Write([]byte("Unauthorized " + r.RemoteAddr))
+		return
+	}
 	code := r.URL.Query().Get("code")
+	if code == "" {
+		w.WriteHeader(400)
+		w.Write([]byte("Missing code"))
+		return
+	}
 	w.WriteHeader(200)
 	w.Write([]byte("You can close this tab now."))
 	TwitchHelixChannel <- func(client *helix.Client) {
@@ -62,7 +80,7 @@ func BanTwitch(args ...string) {
 	}
 }
 
-var TwitchHelixChannel = make(chan interface{})
+var TwitchHelixChannel = make(chan interface{}, 10)
 
 func TwitchHelixBot() {
 	backoff := backoff.Backoff{
@@ -91,6 +109,7 @@ func TwitchHelixBot() {
 			twitchColor.Println(err)
 			continue
 		}
+
 		client, err := helix.NewClient(&helix.Options{
 			ClientID:        clientID,
 			ClientSecret:    clientSecret,
@@ -105,9 +124,9 @@ func TwitchHelixBot() {
 		client.OnUserAccessTokenRefreshed(OnUserAccessTokenRefreshed)
 		twitchAuthUrl = client.GetAuthorizationURL(&helix.AuthorizationURLParams{
 			ResponseType: "code",
-			Scopes:       []string{"moderator:manage:banned_users"},
+			Scopes:       []string{"moderator:manage:banned_users", "moderator:read:followers"},
 		})
-
+		WriteStringToFile(path.Join(baseDir, "twitch_auth_url.txt"), twitchAuthUrl)
 		getUsersResp, err := client.GetUsers(&helix.UsersParams{Logins: []string{twitchBroadcasterUsername, twitchBotUsername}})
 		if err != nil {
 			twitchColor.Println("Couldn't get user IDs: ", err)
@@ -120,12 +139,7 @@ func TwitchHelixBot() {
 				twitchBotID = user.ID
 			}
 		}
-		// getEventSubResp, err := client.GetEventSubSubscriptions(&helix.EventSubSubscriptionsParams{})
-		// if err != nil {
-		// 	fmt.Println(err)
-		// 	continue
-		// }
-		// color.Printf("getEventSubResp: %#v\n", getEventSubResp)
+
 		for msg := range TwitchHelixChannel {
 			switch t := msg.(type) {
 			case func(*helix.Client):

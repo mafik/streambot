@@ -3,10 +3,13 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
+	"net"
 	"os"
 	"time"
 
 	"github.com/fatih/color"
+	externalip "github.com/glendc/go-external-ip"
 )
 
 type ChatEntry struct {
@@ -94,11 +97,42 @@ var MainChannel = make(chan interface{})
 
 var Webserver *WebsocketHub
 
+var publicIP string
+
+var networkSetupDone = make(chan struct{})
+
+// NetworkSetup fills the public IP with the address of our server and redirects the webserverPort
+func NetworkSetup() {
+	consensus := externalip.DefaultConsensus(nil, nil)
+	ip, err := consensus.ExternalIP()
+	if err != nil {
+		warn_color.Println("Couldn't get external IP:", err)
+	}
+	publicIP = ip.String()
+
+	server, _ := net.ResolveTCPAddr("tcp", "google.com:80")
+	client, _ := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", webserverPort))
+	conn, err := net.DialTCP("tcp", client, server)
+	if err != nil {
+		// Failures here are fine. They mean that we already did port redirection before.
+		close(networkSetupDone)
+		return
+	}
+	conn.Close()
+	close(networkSetupDone)
+}
+
 func main() {
+	var err error
+
+	go NetworkSetup()
+
 	go ObsGaze("Main", "Gaze")
 
 	go TwitchHelixBot()
 	go TwitchIRCBot()
+	go TwitchEventSub()
+
 	go YouTubeBot()
 	go AudioPlayer()
 	go OBS()
@@ -110,7 +144,6 @@ func main() {
 	go TTS()
 
 	// Read the ten last lines from "chat_log.txt"
-	var err error
 	chat_log, err = ReadLastChatLog()
 	if err != nil {
 		warn_color.Println("Error while reading chat_log.txt:", err)
@@ -130,7 +163,6 @@ func main() {
 			for _, entry := range chat_log {
 				client.Call("OnChatMessage", entry)
 			}
-			client.Call("ShowAlert", `<div class="big">Sample Alert</div>This is just a sample alert!`)
 		case msg := <-MainChannel:
 			switch t := msg.(type) {
 			case ChatEntry:
