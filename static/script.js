@@ -15,6 +15,16 @@ function ShowNextAlert() {
   let closeMillis = 1000;
   let time = openMillis + durationMillis + closeMillis;
 
+  var audio = new Audio('door-open.wav');
+  audio.volume = 0.8;
+  audio.play();
+
+  setTimeout(function () {
+    var audio = new Audio('door-close.wav');
+    audio.volume = 0.8;
+    audio.play();
+  }, time - closeMillis + 250);
+
   let contentElement = document.getElementById('alert-content');
   contentElement.innerHTML = html;
 
