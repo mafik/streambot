@@ -26,6 +26,7 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
   - Chat logging to a file
 - High-quality TTS for chat messages with stylized voices
   - Mindful delay of TTS messages while speaking
+  - ***TODO**: Stop TTS playback when user is muted*
 - Control panel available by opening `control.html` (locally or through `http://IP:3447/control.html`)
   - Button for muting TTS for specific users
   - Button for banning users on Twitch
@@ -39,7 +40,7 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
 - ***TODO**: automatic streaming notifications on Twitter and Mastodon*
 - On-stream alerts
   - Twitch follows
-  - ***TODO**: TTS should read out alerts out loud*
+  - TTS narrator reads out the alerts
   - ***TODO**: Play a sound when an alert starts*
   - ***TODO**: YouTube subscriptions*
   - ***TODO**: GitHub sponsors*
@@ -76,3 +77,4 @@ If you manage to improve anything, please send a PR!
 ## Attribution
 
 - https://www.toptal.com/designers/subtlepatterns/
+- sci fi auto sliding door.wav by squidge316 -- https://freesound.org/s/404921/ -- License: Creative Commons 0

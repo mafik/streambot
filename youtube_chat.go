@@ -168,6 +168,7 @@ const (
 	API_TYPE           = "live_chat"
 	YT_CFG_REGEX       = `ytcfg\.set\s*\(\s*({.+?})\s*\)\s*;`
 	INITIAL_DATA_REGEX = `(?:window\s*\[\s*["\']ytInitialData["\']\s*\]|ytInitialData)\s*=\s*({.+?})\s*;\s*(?:var\s+meta|</script|\n)`
+	YT_CHANNEL_ID      = "UCBPKTkmfqWCVnrEv8CBPrbg"
 )
 
 func regexSearch(regex string, str string) []string {
@@ -375,7 +376,7 @@ func YouTubeBot() {
 		}
 		if videoId == "" {
 			// TODO: create one ourselves...
-			color.Println("No live stream found. Visit YouTube live streaming dashboard to create a new one!")
+			color.Printf("No live stream found. Visit https://studio.youtube.com/channel/%s/livestreaming/dashboard?c=%s to create a new one!\n", YT_CHANNEL_ID, YT_CHANNEL_ID)
 			continue
 		}
 		color.Println("Connecting to https://youtu.be/" + videoId)

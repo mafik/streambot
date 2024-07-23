@@ -104,9 +104,19 @@ func TwitchEventSub() {
 							return
 						}
 						userName := follow_notification.Payload.Event.UserName
-						alert := fmt.Sprintf(`<div class="big">%s</div>Just followed on Twitch!`, userName)
-						Webserver.Call("ShowAlert", alert)
-						twitchColor.Printf("%s follows on Twitch!\n", userName)
+						userID := follow_notification.Payload.Event.UserID
+						TTSChannel <- Alert{
+							HTML: fmt.Sprintf(`<div class="big">%s</div>Just followed on Twitch!`, userName),
+							onPlay: func() {
+								MainChannel <- ChatEntry{
+									Message:      fmt.Sprintf("<strong>%s</strong> 💜 just followed on Twitch!", userName),
+									terminalMsg:  fmt.Sprintf("  %s 💜 just followed on Twitch!\n", userName),
+									Source:       "Twitch",
+									TwitchUserId: userID,
+									skipTTS:      true,
+								}
+							},
+						}
 					default:
 						twitchColor.Println("Twitch EventSub unknown notification type:", generic_notification.Payload.Subscription.Type)
 					}

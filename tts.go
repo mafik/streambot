@@ -74,6 +74,42 @@ func Download(url string) ([]byte, error) {
 	return io.ReadAll(resp.Body)
 }
 
+func VocalizeHTML(text string) string {
+	message := htmlTagRegexp.ReplaceAllString(text, "")
+	message = urlRegexp.ReplaceAllString(message, "\" * U-R-L * \"")
+	for _, acronym := range acronyms {
+		pronunciation := strings.ToUpper(acronym)
+		// insert dashes between letters
+		pronunciation = strings.Join(strings.Split(pronunciation, ""), "-")
+		message = strings.ReplaceAll(message, acronym, pronunciation)
+	}
+	return message
+}
+
+func SynthesizeAllTalk(r *http.Request) ([]byte, error) {
+	client := &http.Client{}
+	resp, err := client.Do(r)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't generate TTS: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("TTS API returned non-200 status code: %s", resp.Status)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't read TTS response: %w", err)
+	}
+	var generateResponse GenerateResponse
+	if err := json.Unmarshal(body, &generateResponse); err != nil {
+		return nil, fmt.Errorf("couldn't decode TTS response: %w", err)
+	}
+	wav, err := Download(allTalkUrl + generateResponse.OutputFileUrl)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't download TTS result: %w", err)
+	}
+	return wav, nil
+}
+
 func TTS() {
 	go func() {
 		backoff := backoff.Backoff{
@@ -100,7 +136,7 @@ func TTS() {
 			r := helloWorldRequest()
 			_, err := client.Do(r)
 			if err != nil {
-				ttsColor.Println("AllTalk is down:", err, ". Starting new instance...")
+				ttsColor.Println("AllTalk is down. Starting new instance...")
 				ssh, err := NewSSH("vr:17275")
 				if err != nil {
 					ttsColor.Println("Couldn't connect to vr to start AllTalk:", err)
@@ -133,22 +169,11 @@ func TTS() {
 			for msg := range TTSChannel {
 				switch t := msg.(type) {
 				case ChatEntry:
-					client := &http.Client{}
-
 					if muted[t.Author] {
 						continue
 					}
 
-					message := htmlTagRegexp.ReplaceAllString(t.Message, "")
-					message = urlRegexp.ReplaceAllString(message, "\" * U-R-L * \"")
-
-					for _, acronym := range acronyms {
-						pronunciation := strings.ToUpper(acronym)
-						// insert dashes between letters
-						pronunciation = strings.Join(strings.Split(pronunciation, ""), "-")
-						message = strings.ReplaceAll(message, acronym, pronunciation)
-					}
-
+					message := VocalizeHTML(t.Message)
 					var r *http.Request
 					if lastAuthor == t.Author {
 						r = ttsGenerateRequest(fmt.Sprintf("\"%s\"", message), "SMOrc.wav", narratorVoiceCfg)
@@ -156,38 +181,45 @@ func TTS() {
 						r = ttsGenerateRequest(fmt.Sprintf("*%s says: * \"%s\"", t.Author, message), "SMOrc.wav", narratorVoiceCfg)
 						lastAuthor = t.Author
 					}
-					resp, err := client.Do(r)
+					wav, err := SynthesizeAllTalk(r)
 					if err != nil {
-						ttsColor.Println("Couldn't generate TTS:", err)
+						ttsColor.Println("AllTalk error:", err)
 						break
 					}
-					if resp.StatusCode != http.StatusOK {
-						ttsColor.Println("TTS API returned non-200 status code:", resp.Status)
-						break
+					select {
+					case AudioPlayerChannel <- PlayMessage{
+						wavData: wav,
+					}:
+					default:
+						ttsColor.Println("Player is busy, dropping TTS message")
 					}
-					body, err := io.ReadAll(resp.Body)
+				case Alert:
+					message := VocalizeHTML(t.HTML)
+					r := ttsGenerateRequest(fmt.Sprintf("* %s *", message), "SMOrc.wav", narratorVoiceCfg)
+					wav, err := SynthesizeAllTalk(r)
 					if err != nil {
-						ttsColor.Println("Couldn't read TTS response:", err)
+						ttsColor.Println("AllTalk error:", err)
 						break
 					}
-					var generateResponse GenerateResponse
-					if err := json.Unmarshal(body, &generateResponse); err != nil {
-						ttsColor.Println("Couldn't decode TTS response:", err)
-						break
+					select {
+					case AudioPlayerChannel <- PlayMessage{
+						wavData: wav,
+						prePlay: func() {
+							durationMillis := WAVDuration(wav).Milliseconds()
+							if t.onPlay != nil {
+								t.onPlay()
+							}
+							Webserver.Call("ShowAlert", t.HTML, durationMillis)
+							// block audio playback for 1 second (until alert window opens)
+							time.Sleep(time.Second)
+						},
+						postPlay: func() {
+							time.Sleep(time.Second)
+						},
+					}:
+					default:
+						ttsColor.Println("Player is busy, dropping TTS message")
 					}
-
-					func() {
-						wav, err := Download(allTalkUrl + generateResponse.OutputFileUrl)
-						if err != nil {
-							ttsColor.Println("Couldn't download TTS result:", err)
-							return
-						}
-						select {
-						case AudioPlayerChannel <- wav:
-						default:
-							ttsColor.Println("Player is busy, dropping TTS message")
-						}
-					}()
 				case func():
 					t()
 				}

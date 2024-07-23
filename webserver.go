@@ -114,6 +114,13 @@ type JavaScriptHandler func(...string)
 var JavaScriptHandlers = map[string]JavaScriptHandler{
 	"ToggleMuted": ToggleMuted,
 	"BanTwitch":   BanTwitch,
+	"ShowAlert": func(args ...string) {
+		html := args[0]
+		TTSChannel <- Alert{
+			HTML: html,
+		}
+		fmt.Println("Debug Alert:", html)
+	},
 }
 
 // readPump pumps messages from the websocket connection to the hub.

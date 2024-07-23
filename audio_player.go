@@ -9,9 +9,32 @@ import (
 	"github.com/fatih/color"
 )
 
-var AudioPlayerChannel = make(chan interface{}, 10)
+var AudioPlayerChannel = make(chan interface{}, 20)
 
 var audioPlayerColor = color.New(color.FgGreen)
+
+type PlayMessage struct {
+	wavData  []byte // first 44 bytes (WAV header) are ignored
+	prePlay  func() // optional function to run before playing (blocks audio playback)
+	postPlay func() // optional function to run after playing (blocks audio playback)
+}
+
+func WAVDuration(wav []byte) time.Duration {
+	const bytesPerSecond = 44100 * 2
+	return time.Duration(len(wav)-44) * time.Second / time.Duration(bytesPerSecond)
+}
+
+func WaitForMicSilence() {
+	if !MicIsSilent.Load() {
+		audioPlayerColor.Println("Audio Player waiting for mic silence...")
+		waitStart := time.Now()
+		// wait for the mic to be silent
+		for !MicIsSilent.Load() {
+			time.Sleep(time.Millisecond * 100)
+		}
+		audioPlayerColor.Println("Resuming playback after", time.Since(waitStart))
+	}
+}
 
 func AudioPlayer() {
 	var backoff = backoff.Backoff{
@@ -37,24 +60,22 @@ func AudioPlayer() {
 			select {
 			case msg := <-AudioPlayerChannel:
 				switch t := msg.(type) {
-				case []byte:
-					t = t[44:] // remove WAV header
-					player := otoCtx.NewPlayer(bytes.NewReader(t))
-					if !MicIsSilent.Load() {
-						audioPlayerColor.Println("Audio Player waiting for mic silence...")
-						waitStart := time.Now()
-						// wait for the mic to be silent
-						for !MicIsSilent.Load() {
-							time.Sleep(time.Millisecond * 100)
-						}
-						audioPlayerColor.Println("Resuming playback after", time.Since(waitStart))
+				case PlayMessage:
+					samples := t.wavData[44:] // remove WAV header
+					player := otoCtx.NewPlayer(bytes.NewReader(samples))
+					WaitForMicSilence()
+					if t.prePlay != nil {
+						t.prePlay()
 					}
 					player.Play()
 					for player.IsPlaying() {
 						time.Sleep(time.Millisecond)
 					}
+					if t.postPlay != nil {
+						t.postPlay()
+					}
 				default:
-					audioPlayerColor.Printf("Player received unknown message type: %#v\n", t)
+					audioPlayerColor.Printf("Player received unknown message type: %T\n", t)
 				}
 			}
 		}

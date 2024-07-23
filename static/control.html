@@ -20,10 +20,36 @@
       width: 100vw;
       height: 100vh;
     }
+
+    #alert-form>* {
+      font-size: inherit;
+      padding: 5px;
+      margin: 5px;
+      border-radius: 10px;
+    }
+
+    #alert-form {
+      position: fixed;
+      top: 2em;
+      left: 0;
+      width: 50vw;
+      background: rgba(255, 255, 255, 0.5);
+      display: flex;
+      justify-content: stretch;
+      align-items: stretch;
+      flex-direction: column;
+      z-index: 1;
+      padding: 5px;
+      border-radius: 5px;
+    }
   </style>
 </head>
 
 <body>
+  <div id="alert-form">
+    <textarea id="alert-input" placeholder="Alert message"></textarea>
+    <button id="alert-submit" onclick="ws.send(JSON.stringify({ call: 'ShowAlert', args: [document.getElementById('alert-input').value] }));">Send</button>
+  </div>
   <div id="alert">
     <div id="alert-content"></div>
   </div>

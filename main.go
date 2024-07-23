@@ -12,6 +12,11 @@ import (
 	externalip "github.com/glendc/go-external-ip"
 )
 
+type Alert struct {
+	HTML   string `json:"html"`
+	onPlay func() // function to call when the alert is played (optional)
+}
+
 type ChatEntry struct {
 	Author       string `json:"author,omitempty"`
 	Message      string `json:"message"`

@@ -44,6 +44,11 @@ html {
   opacity: 1;
 }
 
+.chat_log[data-twitch_user_id]:hover .control_panel {
+  transform: scale(100%);
+  opacity: 1;
+}
+
 .avatar {
   border-radius: 50%;
   vertical-align: middle;
@@ -176,7 +181,6 @@ body {
 #alert-content {
   width: var(--alert-width);
   flex: 0 0 auto;
-  word-break: break-all;
   color: white;
   font-family: 'Instrument Serif';
 }
@@ -192,6 +196,10 @@ body {
 #alert-content .letter {
   color: var(--color);
   border-color: white;
+}
+
+.word {
+  white-space: nowrap;
 }
 
 #alert-content .big .letter {

@@ -8,7 +8,13 @@ function Reload() {
 }
 let alert_queue = [];
 function ShowNextAlert() {
-  let html = alert_queue[0];
+  let alertMsg = alert_queue[0];
+  let html = alertMsg.html;
+  let openMillis = 1000;
+  let durationMillis = alertMsg.durationMillis;
+  let closeMillis = 1000;
+  let time = openMillis + durationMillis + closeMillis;
+
   let contentElement = document.getElementById('alert-content');
   contentElement.innerHTML = html;
 
@@ -18,12 +24,18 @@ function ShowNextAlert() {
   while (nodes_queue.length > 0) {
     let node = nodes_queue.shift();
     if (node instanceof Text) {
-      for (let letter of node.data) {
-        let span = document.createElement('span');
-        span.classList.add('letter');
-        span.textContent = letter;
-        node.before(span);
-        ++n;
+      for (let word of node.data.split(' ')) {
+        let wordSpan = document.createElement('span');
+        wordSpan.classList.add('word');
+        for (let letter of word) {
+          let letterSpan = document.createElement('span');
+          letterSpan.classList.add('letter');
+          letterSpan.textContent = letter;
+          ++n;
+          wordSpan.appendChild(letterSpan);
+        }
+        node.before(new Text(' '));
+        node.before(wordSpan);
       }
       node.remove();
     } else {
@@ -32,9 +44,6 @@ function ShowNextAlert() {
       }
     }
   }
-  let appearMillis = 3000;
-  let appearLetterDelay = 50;
-  let time1 = n * appearLetterDelay + appearMillis;
   anime.timeline({ loop: false })
     .add({
       targets: '#alert-content .letter',
@@ -42,20 +51,19 @@ function ShowNextAlert() {
       skewX: [-15, 0],
       opacity: [0, 1],
       easing: "easeOutExpo",
-      duration: appearMillis,
-      delay: (el, i) => appearLetterDelay * i
+      duration: 3000,
+      delay: (el, i) => 50 * i
     });
 
-  let highlightLetterMillis = 100;
-  let highlightOverlap = 15; // Number of letters to highlight at the same time
-  let time2 = highlightLetterMillis * highlightOverlap + highlightLetterMillis * n;
+  let highlightLetterMillis = durationMillis / n;
+  let highlightDuration = 20 * highlightLetterMillis;
   anime.timeline({ loop: false }).add({
     targets: '#alert-content .letter',
     marginLeft: [0, 5, 0],
     easing: "easeInOutSine",
     borderColor: ['#ffffff', '#e65a2f', '#ffffff'],
-    duration: highlightLetterMillis * highlightOverlap,
-    delay: (el, i) => highlightLetterMillis * i,
+    duration: highlightDuration,
+    delay: (el, i) => Math.max(0, highlightLetterMillis * i + 1000 - highlightDuration / 2),
     update: (anim) => {
       for (let animation of anim.animations) {
         if (animation.type != 'css') {
@@ -67,8 +75,6 @@ function ShowNextAlert() {
       }
     },
   });
-
-  let time = Math.max(time1, time2) + 1000;
 
   let alert = document.getElementById('alert');
   alert.style.setProperty('--time', time + 'ms');
@@ -86,8 +92,11 @@ function ShowNextAlert() {
   });
 }
 
-function ShowAlert(html) {
-  alert_queue.push(html);
+function ShowAlert(html, durationMillis) {
+  alert_queue.push({
+    html: html,
+    durationMillis: durationMillis,
+  });
   if (alert_queue.length == 1) {
     ShowNextAlert();
   }
