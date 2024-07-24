@@ -53,6 +53,18 @@ type TwitchFollowNotification struct {
 	} `json:"payload"`
 }
 
+// https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelraid
+type TwitchRaidNotification struct {
+	Payload struct {
+		Event struct {
+			FromBroadcasterUserID    string `json:"from_broadcaster_user_id"`
+			FromBroadcasterUserLogin string `json:"from_broadcaster_user_login"`
+			FromBroadcasterUserName  string `json:"from_broadcaster_user_name"`
+			Viewers                  int    `json:"viewers"`
+		} `json:"event"`
+	} `json:"payload"`
+}
+
 func TwitchEventSub() {
 	backoff := backoff.Backoff{
 		Color:       twitchColor,
@@ -87,7 +99,11 @@ func TwitchEventSub() {
 						twitchColor.Println("Twitch EventSub cannot unmarshal welcome:", err, string(bytes))
 						return
 					}
-					ConfigureEventSub(welcome_msg.Payload.Session.ID)
+					err = TwitchEventsSubscribeKnown(welcome_msg.Payload.Session.ID)
+					if err != nil {
+						twitchColor.Println("Twitch EventSub configure ERROR:", err)
+						return
+					}
 				case "notification":
 					var generic_notification TwitchNotification
 					err = json.Unmarshal(bytes, &generic_notification)
@@ -97,22 +113,41 @@ func TwitchEventSub() {
 					}
 					switch generic_notification.Payload.Subscription.Type {
 					case "channel.follow":
-						var follow_notification TwitchFollowNotification
-						err = json.Unmarshal(bytes, &follow_notification)
+						var notification TwitchFollowNotification
+						err = json.Unmarshal(bytes, &notification)
 						if err != nil {
 							twitchColor.Println("Twitch EventSub cannot unmarshal follow:", err, string(bytes))
 							return
 						}
-						userName := follow_notification.Payload.Event.UserName
-						userID := follow_notification.Payload.Event.UserID
+						event := notification.Payload.Event
 						TTSChannel <- Alert{
-							HTML: fmt.Sprintf(`<div class="big">%s</div>Just followed on Twitch!`, userName),
+							HTML: fmt.Sprintf(`<div class="big">%s</div>Just followed on Twitch!`, event.UserName),
 							onPlay: func() {
 								MainChannel <- ChatEntry{
-									Message:      fmt.Sprintf("<strong>%s</strong> 💜 just followed on Twitch!", userName),
-									terminalMsg:  fmt.Sprintf("  %s 💜 just followed on Twitch!\n", userName),
+									Message:      fmt.Sprintf("<strong>%s</strong> 💜 just followed on Twitch!", event.UserName),
+									terminalMsg:  fmt.Sprintf("  %s 💜 just followed on Twitch!\n", event.UserName),
 									Source:       "Twitch",
-									TwitchUserId: userID,
+									TwitchUserId: event.UserID,
+									skipTTS:      true,
+								}
+							},
+						}
+					case "channel.raid":
+						var notification TwitchRaidNotification
+						err = json.Unmarshal(bytes, &notification)
+						if err != nil {
+							twitchColor.Println("Twitch EventSub cannot unmarshal raid:", err, string(bytes))
+							return
+						}
+						event := notification.Payload.Event
+						TTSChannel <- Alert{
+							HTML: fmt.Sprintf(`<div class="big">%s</div>is raiding with %d viewers!`, event.FromBroadcasterUserName, event.Viewers),
+							onPlay: func() {
+								MainChannel <- ChatEntry{
+									Message:      fmt.Sprintf("<strong>%s</strong> 🚨 is raiding with %d viewers!", event.FromBroadcasterUserName, event.Viewers),
+									terminalMsg:  fmt.Sprintf("  %s 🚨 is raiding with %d viewers!\n", event.FromBroadcasterUserName, event.Viewers),
+									Source:       "Twitch",
+									TwitchUserId: event.FromBroadcasterUserID,
 									skipTTS:      true,
 								}
 							},
@@ -149,29 +184,45 @@ func GenerateSecret(n int) (string, error) {
 	return secret, nil
 }
 
-func ConfigureEventSub(sessionID string) {
-	// See https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/
+// See https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/
+func TwitchEventSubscribe(sessionID, subscriptionType, version string, condition helix.EventSubCondition) <-chan error {
+	errChan := make(chan error)
 	TwitchHelixChannel <- func(client *helix.Client) {
-
 		followSub, err := client.CreateEventSubSubscription(&helix.EventSubSubscription{
-			Type:    "channel.follow",
-			Version: "2",
-			Condition: helix.EventSubCondition{
-				BroadcasterUserID: twitchBroadcasterID,
-				ModeratorUserID:   twitchBotID,
-			},
+			Type:      subscriptionType,
+			Version:   version,
+			Condition: condition,
 			Transport: helix.EventSubTransport{
 				Method:    "websocket",
 				SessionID: sessionID,
 			},
 		})
 		if err != nil {
-			twitchColor.Println("Error in CreateEventSubSubscription", err)
+			errChan <- err
 			return
 		}
 		if followSub.Error != "" {
-			twitchColor.Printf("Twitch Follow subscription failed %#v\n", followSub.ErrorMessage)
+			errChan <- fmt.Errorf("Twitch event subscription for %s:%s failed %s", subscriptionType, version, followSub.ErrorMessage)
 			return
 		}
+		errChan <- nil
 	}
+	return errChan
+}
+
+func TwitchEventsSubscribeKnown(sessionID string) error {
+	err := <-TwitchEventSubscribe(sessionID, "channel.follow", "2", helix.EventSubCondition{
+		BroadcasterUserID: twitchBroadcasterID,
+		ModeratorUserID:   twitchBotID,
+	})
+	if err != nil {
+		return err
+	}
+	err = <-TwitchEventSubscribe(sessionID, "channel.raid", "1", helix.EventSubCondition{
+		ToBroadcasterUserID: twitchBroadcasterID,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }

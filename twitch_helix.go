@@ -80,7 +80,7 @@ func BanTwitch(args ...string) {
 	}
 }
 
-var TwitchHelixChannel = make(chan interface{}, 10)
+var TwitchHelixChannel = make(chan interface{}, 100)
 
 func TwitchHelixBot() {
 	backoff := backoff.Backoff{
