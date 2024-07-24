@@ -93,13 +93,17 @@ func TwitchIRCBot() {
 			i := 0
 			for i < len(entry.Message) {
 				replaced := false
-				for emote, url := range *emotes {
-					if strings.HasPrefix(entry.Message[i:], emote) {
-						tag := `<img src="` + url + `" class="emoji" />`
-						entry.Message = entry.Message[:i] + tag + entry.Message[i+len(emote):]
-						i += len(tag) + len(emote)
-						replaced = true
-						break
+				if i == 0 || entry.Message[i-1] == ' ' {
+					for emote, url := range *emotes {
+						if i+len(emote) >= len(entry.Message)-1 || entry.Message[i+len(emote)] == ' ' {
+							if strings.HasPrefix(entry.Message[i:], emote) {
+								tag := `<img src="` + url + `" class="emoji" />`
+								entry.Message = entry.Message[:i] + tag + entry.Message[i+len(emote):]
+								i += len(tag)
+								replaced = true
+								break
+							}
+						}
 					}
 				}
 				if !replaced {
