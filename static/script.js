@@ -6,6 +6,76 @@ function Reload() {
   chat.textContent = 'Reloading...';
   window.location.reload();
 }
+let ecg_pings = {
+  'Twitch': [],
+};
+function Ping(component) {
+  if (!(component in ecg_pings)) {
+    ecg_pings[component] = [];
+  }
+  ecg_pings[component].push({
+    type: 'ping',
+    time: Date.now(),
+  });
+}
+function Pong(component) {
+  if (!(component in ecg_pings)) {
+    ecg_pings[component] = [];
+  }
+  ecg_pings[component].push({
+    type: 'pong',
+    time: Date.now(),
+  });
+  while (ecg_pings[component].length > 10) {
+    ecg_pings[component].shift();
+  }
+}
+let canvas = document.getElementById('ecg');
+function DrawECG(t) {
+  canvas.height = 40 * Object.keys(ecg_pings).length + 30;
+  let ctx = canvas.getContext('2d');
+  let now = Date.now();
+  // ctx.clearRect(0, 0, canvas.width, canvas.height);
+  let y = 0;
+  ctx.strokeStyle = '#ffffff';
+  ctx.font = '40px Belanosima';
+  for (let component in ecg_pings) {
+    y += 40;
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#ffffff';
+    ctx.strokeText(component, 10, y);
+    ctx.fillStyle = '#8054a4';
+    ctx.fillText(component, 10, y);
+    let pings = ecg_pings[component];
+    ctx.beginPath();
+    let h = y;
+    ctx.moveTo(0, h);
+    let widthTime = 10000;
+    for (let i = pings.length - 1; i >= 0; --i) {
+      let entry = pings[i];
+      let time = entry.time;
+      let x = (now - time) / widthTime * canvas.width;
+      if (entry.type == 'ping') {
+        ctx.lineTo(x, h + 20);
+        ctx.lineTo(x, h);
+      } else if (entry.type == 'pong') {
+        ctx.lineTo(x, h);
+        ctx.lineTo(x, h - 20);
+      }
+    }
+    ctx.lineTo(canvas.width, h);
+    ctx.lineWidth = 4;
+    ctx.filter = "blur(4px)";
+    ctx.strokeStyle = '#a074c4';
+    ctx.stroke();
+    ctx.filter = "blur(0px)";
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#ffffff';
+    ctx.stroke();
+  }
+  requestAnimationFrame(DrawECG);
+}
+requestAnimationFrame(DrawECG);
 let alert_queue = [];
 function ShowNextAlert() {
   let alertMsg = alert_queue[0];
@@ -16,12 +86,12 @@ function ShowNextAlert() {
   let time = openMillis + durationMillis + closeMillis;
 
   var audio = new Audio('door-open.wav');
-  audio.volume = 0.8;
+  audio.volume = 0.7;
   audio.play();
 
   setTimeout(function () {
     var audio = new Audio('door-close.wav');
-    audio.volume = 0.8;
+    audio.volume = 0.7;
     audio.play();
   }, time - closeMillis + 250);
 

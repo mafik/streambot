@@ -6,6 +6,7 @@ import (
 	"path"
 	"streambot/backoff"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/gempir/go-twitch-irc"
@@ -75,6 +76,14 @@ func TwitchIRCBot() {
 			continue
 		}
 		irc := twitch.NewClient(twitchBotUsername, ircToken)
+		irc.IdlePingInterval = 5 * time.Second
+		irc.PongTimeout = 10 * time.Second
+		irc.OnPingSent(func() {
+			Webserver.Call("Ping", "Twitch")
+		})
+		irc.OnPongReceived(func() {
+			Webserver.Call("Pong", "Twitch")
+		})
 		irc.OnConnect(func() {
 			color.Println("Connected to Twitch IRC server")
 		})

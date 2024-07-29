@@ -284,3 +284,14 @@ body {
     left: calc(50% - var(--alert-width) / 2);
   }
 }
+
+#ecg {
+  position: fixed;
+  bottom: 0;
+  left: calc(50vw - 100px);
+  border: 2px solid #cf7932;
+  border-bottom: none;
+  background: rgba(255, 202, 158, 0.263);
+  z-index: 2;
+  border-radius: 20px 80px 0 0;
+}

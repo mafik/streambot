@@ -185,44 +185,48 @@ func GenerateSecret(n int) (string, error) {
 }
 
 // See https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/
-func TwitchEventSubscribe(sessionID, subscriptionType, version string, condition helix.EventSubCondition) <-chan error {
+// Run this only on the TwitchHelix thread!
+func TwitchEventSubscribe(client *helix.Client, sessionID, subscriptionType, version string, condition helix.EventSubCondition) error {
+	msg := helix.EventSubSubscription{
+		Type:      subscriptionType,
+		Version:   version,
+		Condition: condition,
+		Transport: helix.EventSubTransport{
+			Method:    "websocket",
+			SessionID: sessionID,
+		},
+	}
+	followSub, err := client.CreateEventSubSubscription(&msg)
+	if err != nil {
+
+		return err
+	}
+	if followSub.Error != "" {
+		return fmt.Errorf("Twitch event subscription for %s:%s failed %s", subscriptionType, version, followSub.ErrorMessage)
+	}
+	return nil
+}
+
+func TwitchEventsSubscribeKnown(sessionID string) error {
 	errChan := make(chan error)
 	TwitchHelixChannel <- func(client *helix.Client) {
-		followSub, err := client.CreateEventSubSubscription(&helix.EventSubSubscription{
-			Type:      subscriptionType,
-			Version:   version,
-			Condition: condition,
-			Transport: helix.EventSubTransport{
-				Method:    "websocket",
-				SessionID: sessionID,
-			},
+
+		err := TwitchEventSubscribe(client, sessionID, "channel.follow", "2", helix.EventSubCondition{
+			BroadcasterUserID: twitchBroadcasterID,
+			ModeratorUserID:   twitchBotID,
 		})
 		if err != nil {
 			errChan <- err
 			return
 		}
-		if followSub.Error != "" {
-			errChan <- fmt.Errorf("Twitch event subscription for %s:%s failed %s", subscriptionType, version, followSub.ErrorMessage)
+		err = TwitchEventSubscribe(client, sessionID, "channel.raid", "1", helix.EventSubCondition{
+			ToBroadcasterUserID: twitchBroadcasterID,
+		})
+		if err != nil {
+			errChan <- err
 			return
 		}
 		errChan <- nil
 	}
-	return errChan
-}
-
-func TwitchEventsSubscribeKnown(sessionID string) error {
-	err := <-TwitchEventSubscribe(sessionID, "channel.follow", "2", helix.EventSubCondition{
-		BroadcasterUserID: twitchBroadcasterID,
-		ModeratorUserID:   twitchBotID,
-	})
-	if err != nil {
-		return err
-	}
-	err = <-TwitchEventSubscribe(sessionID, "channel.raid", "1", helix.EventSubCondition{
-		ToBroadcasterUserID: twitchBroadcasterID,
-	})
-	if err != nil {
-		return err
-	}
-	return nil
+	return <-errChan
 }
