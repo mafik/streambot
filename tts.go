@@ -169,17 +169,21 @@ func TTS() {
 			for msg := range TTSChannel {
 				switch t := msg.(type) {
 				case ChatEntry:
-					if muted[t.Author] {
+					if IsMuted(t.Author) {
+						continue
+					}
+					if t.ttsMsg == "" {
 						continue
 					}
 
-					message := VocalizeHTML(t.Message)
+					message := VocalizeHTML(t.ttsMsg)
 					var r *http.Request
-					if lastAuthor == t.Author {
+					authorKey := t.Author.Key()
+					if lastAuthor == authorKey {
 						r = ttsGenerateRequest(fmt.Sprintf("\"%s\"", message), "SMOrc.wav", narratorVoiceCfg)
 					} else {
-						r = ttsGenerateRequest(fmt.Sprintf("*%s says: * \"%s\"", t.Author, message), "SMOrc.wav", narratorVoiceCfg)
-						lastAuthor = t.Author
+						r = ttsGenerateRequest(fmt.Sprintf("*%s says: * \"%s\"", t.Author.DisplayName(), message), "SMOrc.wav", narratorVoiceCfg)
+						lastAuthor = authorKey
 					}
 					wav, err := SynthesizeAllTalk(r)
 					if err != nil {
@@ -189,6 +193,7 @@ func TTS() {
 					select {
 					case AudioPlayerChannel <- PlayMessage{
 						wavData: wav,
+						author:  &t.Author,
 					}:
 					default:
 						ttsColor.Println("Player is busy, dropping TTS message")

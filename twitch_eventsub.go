@@ -123,12 +123,11 @@ func TwitchEventSub() {
 						TTSChannel <- Alert{
 							HTML: fmt.Sprintf(`<div class="big">%s</div>Just followed on Twitch!`, event.UserName),
 							onPlay: func() {
+								author := UserVariant{TwitchUser: &TwitchUser{TwitchID: event.UserID, Login: event.UserLogin, Name: event.UserName}, BotUser: &BotUser{}}
 								MainChannel <- ChatEntry{
-									Message:      fmt.Sprintf("<strong>%s</strong> 💜 just followed on Twitch!", event.UserName),
-									terminalMsg:  fmt.Sprintf("  %s 💜 just followed on Twitch!\n", event.UserName),
-									Source:       "Twitch",
-									TwitchUserId: event.UserID,
-									skipTTS:      true,
+									HTML:        fmt.Sprintf("%s 💜 just followed on Twitch!", author.HTML()),
+									terminalMsg: fmt.Sprintf("  %s 💜 just followed on Twitch!\n", author.DisplayName()),
+									Author:      author,
 								}
 							},
 						}
@@ -143,12 +142,11 @@ func TwitchEventSub() {
 						TTSChannel <- Alert{
 							HTML: fmt.Sprintf(`<div class="big">%s</div>is raiding with %d viewers!`, event.FromBroadcasterUserName, event.Viewers),
 							onPlay: func() {
+								author := UserVariant{TwitchUser: &TwitchUser{TwitchID: event.FromBroadcasterUserID, Login: event.FromBroadcasterUserLogin, Name: event.FromBroadcasterUserName}, BotUser: &BotUser{}}
 								MainChannel <- ChatEntry{
-									Message:      fmt.Sprintf("<strong>%s</strong> 🚨 is raiding with %d viewers!", event.FromBroadcasterUserName, event.Viewers),
-									terminalMsg:  fmt.Sprintf("  %s 🚨 is raiding with %d viewers!\n", event.FromBroadcasterUserName, event.Viewers),
-									Source:       "Twitch",
-									TwitchUserId: event.FromBroadcasterUserID,
-									skipTTS:      true,
+									HTML:        fmt.Sprintf(TWITCH_ICON+" %s 🚨 is raiding with %d viewers!", author.HTML(), event.Viewers),
+									terminalMsg: fmt.Sprintf("  %s 🚨 is raiding with %d viewers!\n", author.DisplayName(), event.Viewers),
+									Author:      author,
 								}
 							},
 						}

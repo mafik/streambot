@@ -15,6 +15,7 @@ import (
 
 const twitchBotUsername = "bot_maf"
 const twitchBroadcasterUsername = "maf_pl"
+const TWITCH_ICON = `<img src="twitch.svg" class="emoji">`
 
 var twitchBotID string
 var twitchBroadcasterID string
@@ -89,25 +90,29 @@ func TwitchIRCBot() {
 		})
 		irc.OnNewMessage(func(channel string, user twitch.User, message twitch.Message) {
 			entry := ChatEntry{
-				Author:       user.DisplayName,
-				Message:      message.Text,
-				Source:       "Twitch",
-				AuthorColor:  user.Color,
-				TwitchUserId: user.UserID,
+				Author: UserVariant{
+					TwitchUser: &TwitchUser{
+						TwitchID: user.UserID,
+						Name:     user.DisplayName,
+						Color:    user.Color,
+						Login:    user.Username,
+					},
+				},
+				OriginalMessage: message.Text,
 			}
 
-			entry.terminalMsg = fmt.Sprintf("  %s: %s\n", entry.Author, entry.Message)
-			entry.Message = html.EscapeString(entry.Message)
+			entry.terminalMsg = fmt.Sprintf("  %s: %s\n", entry.Author.DisplayName(), entry.OriginalMessage)
+			entry.HTML = html.EscapeString(entry.OriginalMessage)
 
 			i := 0
-			for i < len(entry.Message) {
+			for i < len(entry.HTML) {
 				replaced := false
-				if i == 0 || entry.Message[i-1] == ' ' {
+				if i == 0 || entry.HTML[i-1] == ' ' {
 					for emote, url := range *emotes {
-						if i+len(emote) >= len(entry.Message)-1 || entry.Message[i+len(emote)] == ' ' {
-							if strings.HasPrefix(entry.Message[i:], emote) {
+						if i+len(emote) >= len(entry.HTML)-1 || entry.HTML[i+len(emote)] == ' ' {
+							if strings.HasPrefix(entry.HTML[i:], emote) {
 								tag := `<img src="` + url + `" class="emoji" />`
-								entry.Message = entry.Message[:i] + tag + entry.Message[i+len(emote):]
+								entry.HTML = entry.HTML[:i] + tag + entry.HTML[i+len(emote):]
 								i += len(tag)
 								replaced = true
 								break
@@ -119,6 +124,8 @@ func TwitchIRCBot() {
 					i++
 				}
 			}
+			entry.ttsMsg = entry.HTML // TTS will get rid of HTML tags
+			entry.HTML = fmt.Sprintf(TWITCH_ICON+` %s: %s`, entry.Author.HTML(), entry.HTML)
 
 			MainChannel <- entry
 		})

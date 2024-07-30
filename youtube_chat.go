@@ -93,7 +93,8 @@ type Actions struct {
 				AuthorPhoto struct {
 					Thumbnails []Thumbnail
 				} `json:"authorPhoto"`
-				TimestampUsec string `json:"timestampUsec"`
+				AuthorExternalChannelId string `json:"authorExternalChannelId"`
+				TimestampUsec           string `json:"timestampUsec"`
 			} `json:"liveChatTextMessageRenderer"`
 		} `json:"item"`
 	} `json:"addChatItemAction"`
@@ -169,6 +170,7 @@ const (
 	YT_CFG_REGEX       = `ytcfg\.set\s*\(\s*({.+?})\s*\)\s*;`
 	INITIAL_DATA_REGEX = `(?:window\s*\[\s*["\']ytInitialData["\']\s*\]|ytInitialData)\s*=\s*({.+?})\s*;\s*(?:var\s+meta|</script|\n)`
 	YT_CHANNEL_ID      = "UCBPKTkmfqWCVnrEv8CBPrbg"
+	YOUTUBE_ICON       = `<img src="youtube.svg" class="emoji">`
 )
 
 func regexSearch(regex string, str string) []string {
@@ -228,20 +230,26 @@ func FetchChatMessages(initialContinuationInfo string, ytCfg YtCfg) ([]ChatEntry
 		runs := liveChatTextMessageRenderer.Message.Runs
 		if len(runs) > 0 {
 			chatMessage := ChatEntry{
-				Source:    "YouTube",
-				Author:    liveChatTextMessageRenderer.AuthorName.SimpleText,
+				Author: UserVariant{
+					YouTubeUser: &YouTubeUser{
+						Name:      liveChatTextMessageRenderer.AuthorName.SimpleText,
+						ChannelID: liveChatTextMessageRenderer.AuthorExternalChannelId,
+					},
+				},
 				timestamp: parseMicroSeconds(liveChatTextMessageRenderer.TimestampUsec),
 			}
 			bestSize := 0
 			for _, thumbnail := range liveChatTextMessageRenderer.AuthorPhoto.Thumbnails {
 				if thumbnail.Width > bestSize {
-					chatMessage.AvatarURL = thumbnail.Url
+					chatMessage.Author.YouTubeUser.AvatarURL = thumbnail.Url
 					bestSize = thumbnail.Width
 				}
 			}
+
 			for _, run := range runs {
 				if run.Text != "" {
-					chatMessage.Message += run.Text
+					chatMessage.terminalMsg += run.Text
+					chatMessage.HTML += html.EscapeString(run.Text)
 				} else {
 					if run.Emoji.IsCustomEmoji {
 						numberOfThumbnails := len(run.Emoji.Image.Thumbnails)
@@ -252,16 +260,25 @@ func FetchChatMessages(initialContinuationInfo string, ytCfg YtCfg) ([]ChatEntry
 						//
 						// Adding some whitespace around custom image URLs
 						// without the whitespace it would be difficult to parse these URLs
+						chatMessage.terminalMsg += "[emoji]"
+						url := ""
 						if numberOfThumbnails > 0 && numberOfThumbnails == 2 {
-							chatMessage.Message += " " + run.Emoji.Image.Thumbnails[1].Url + " "
+							url = run.Emoji.Image.Thumbnails[1].Url
 						} else if numberOfThumbnails == 1 {
-							chatMessage.Message += " " + run.Emoji.Image.Thumbnails[0].Url + " "
+							url = run.Emoji.Image.Thumbnails[0].Url
 						}
+						chatMessage.HTML += fmt.Sprintf(`<img src="%s" alt="YouTube emoji" class="emoji">`, url)
 					} else {
-						chatMessage.Message += run.Emoji.EmojiId
+						chatMessage.terminalMsg += run.Emoji.EmojiId
+						chatMessage.HTML += run.Emoji.EmojiId
 					}
 				}
 			}
+
+			chatMessage.ttsMsg = chatMessage.HTML
+			chatMessage.terminalMsg = fmt.Sprintf("  %s: %s\n", chatMessage.Author.DisplayName(), chatMessage.terminalMsg)
+			chatMessage.HTML = fmt.Sprintf(YOUTUBE_ICON+` %s: %s`, chatMessage.Author.HTML(), chatMessage.HTML)
+
 			chatMessages = append(chatMessages, chatMessage)
 		}
 	}
@@ -338,8 +355,6 @@ func ParseInitialData(videoUrl string) (string, YtCfg, error) {
 func AddCookies(cookies []*http.Cookie) {
 	customCookies = cookies
 }
-
-var youtubeEmojiRegexp = regexp.MustCompile(`(https://yt3.ggpht.com/[^ ]+)`)
 
 var YouTubeBotChannel = make(chan interface{})
 
@@ -422,10 +437,6 @@ func YouTubeBot() {
 			}
 
 			for _, entry := range chat {
-				entry.terminalMsg = fmt.Sprintf("  %s: %s\n", entry.Author, entry.Message)
-				entry.Message = html.EscapeString(entry.Message)
-				entry.Message = youtubeEmojiRegexp.ReplaceAllString(entry.Message, `<img src="$1" alt="YouTube emoji" class="emoji">`)
-
 				MainChannel <- entry
 			}
 			if sleepMillis > 1000 {

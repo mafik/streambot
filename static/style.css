@@ -74,39 +74,6 @@ button:hover {
   background: linear-gradient(180deg, #6c6c6c, #555);
 }
 
-#chat>div.twitch>span:before,
-#chat>div.youtube>span:before,
-#chat>div.bot>span:before {
-  background-size: contain;
-  background-repeat: no-repeat;
-  vertical-align: middle;
-
-  width: 1em;
-  height: 1em;
-  content: "";
-  display: inline-block;
-  padding: 0;
-  margin: 0;
-}
-
-#chat>div.twitch>span:before {
-  background-image: url('twitch.svg');
-}
-
-#chat>div.bot>span:before {
-  background-image: url('bot.svg');
-  margin: 0 0.2em 0 0;
-  vertical-align: text-top;
-}
-
-#chat>div.youtube>span:before {
-  background-image: url('youtube.svg');
-  vertical-align: baseline;
-
-  margin: 0 0.1em;
-  height: calc(1em * 180 / 256);
-}
-
 .chat_log>span {
   background: rgba(0, 0, 0, 0.5);
   border-radius: 15px;
@@ -131,6 +98,8 @@ body {
 }
 
 #chat img.emoji {
+  min-width: 1em;
+  min-height: 1em;
   max-width: 1.2em;
   max-height: 1.2em;
   vertical-align: middle;

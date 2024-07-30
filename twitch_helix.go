@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -55,27 +56,33 @@ func OnTwitchAuth(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func BanTwitch(args ...string) {
-	user_id := args[0]
-	user_name := args[1]
-	TwitchHelixChannel <- func(client *helix.Client) {
-		_, err := client.BanUser(&helix.BanUserParams{
-			BroadcasterID: twitchBroadcasterID,
-			ModeratorId:   twitchBotID,
-			Body: helix.BanUserRequestBody{
-				Reason: "Banned by the streamer",
-				UserId: user_id,
-			},
-		})
-		if err != nil {
-			twitchColor.Println(err)
-			return
-		}
-		twitchColor.Println("Banned", user_name)
-		MainChannel <- ChatEntry{
-			Source:  "Bot",
-			Message: fmt.Sprintf(` 💀 <strong>%s</strong>`, user_name),
-			skipTTS: true,
+func Ban(args ...json.RawMessage) {
+	var user UserVariant
+	err := json.Unmarshal(args[0], &user)
+	if err != nil {
+		twitchColor.Println("Couldn't unmarshal user:", err)
+		return
+	}
+	if user.TwitchUser != nil {
+		TwitchHelixChannel <- func(client *helix.Client) {
+			_, err := client.BanUser(&helix.BanUserParams{
+				BroadcasterID: twitchBroadcasterID,
+				ModeratorId:   twitchBotID,
+				Body: helix.BanUserRequestBody{
+					Reason: "Banned by the streamer",
+					UserId: user.TwitchUser.TwitchID,
+				},
+			})
+			if err != nil {
+				twitchColor.Println(err)
+				return
+			}
+			twitchColor.Println("Banned", user.DisplayName())
+			user.BotUser = &BotUser{}
+			MainChannel <- ChatEntry{
+				Author: user,
+				HTML:   fmt.Sprintf(BOT_ICON+` 💀 %s`, user.HTML()),
+			}
 		}
 	}
 }

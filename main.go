@@ -18,15 +18,12 @@ type Alert struct {
 }
 
 type ChatEntry struct {
-	Author       string `json:"author,omitempty"`
-	Message      string `json:"message"`
-	Source       string `json:"source,omitempty"`
-	AuthorColor  string `json:"author_color,omitempty"`
-	AvatarURL    string `json:"avatar_url,omitempty"`
-	TwitchUserId string `json:"twitch_user_id,omitempty"`
-	timestamp    time.Time
-	terminalMsg  string
-	skipTTS      bool
+	Author          UserVariant `json:"author,omitempty"`
+	OriginalMessage string      `json:"original_message"`
+	HTML            string      `json:"html,omitempty"`
+	ttsMsg          string
+	timestamp       time.Time
+	terminalMsg     string
 }
 
 var chat_color *color.Color = color.New(color.FgWhite).Add(color.Bold)
@@ -88,7 +85,7 @@ func MainOnChatEntry(t ChatEntry) {
 		warn_color.Println("Couldn't append to chat_log.txt:", err)
 	}
 	Webserver.Call("OnChatMessage", t)
-	if !t.skipTTS {
+	if t.ttsMsg != "" {
 		// try writing to TTSChannel (ignore if full)
 		select {
 		case TTSChannel <- t:

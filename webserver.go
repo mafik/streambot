@@ -105,17 +105,22 @@ func (c *WebsocketClient) writePump() {
 }
 
 type JavaScriptMessage struct {
-	Call string   `json:"call"`
-	Args []string `json:"args"`
+	Call string            `json:"call"`
+	Args []json.RawMessage `json:"args"`
 }
 
-type JavaScriptHandler func(...string)
+type JavaScriptHandler func(...json.RawMessage)
 
 var JavaScriptHandlers = map[string]JavaScriptHandler{
 	"ToggleMuted": ToggleMuted,
-	"BanTwitch":   BanTwitch,
-	"ShowAlert": func(args ...string) {
-		html := args[0]
+	"Ban":         Ban,
+	"ShowAlert": func(args ...json.RawMessage) {
+		var html string
+		err := json.Unmarshal(args[0], &html)
+		if err != nil {
+			fmt.Println("Can't unmarshal alert: ", err)
+			return
+		}
 		TTSChannel <- Alert{
 			HTML: html,
 		}

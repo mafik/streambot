@@ -186,53 +186,57 @@ function SetAudioMessage(message) {
   document.getElementById('audio-fill').textContent = message;
   document.getElementById('audio-shadow').textContent = message;
 }
+
+function AuthorColor(author) {
+  let twitch = author.twitch || {};
+  let color = twitch.color || 'inherit';
+  return color;
+}
+function AuthorAvatarURL(author) {
+  let youtube = author.youtube || {};
+  let avatar_url = youtube.avatar_url || '';
+  return avatar_url;
+}
+function AuthorName(author) {
+  if ('bot' in author) {
+    return '';
+  }
+  let twitch = author.twitch || {};
+  let youtube = author.youtube || {};
+  return twitch.name || youtube.name || '';
+}
 function OnChatMessage(chat_entry) {
   let chat_log = document.createElement('div');
+  console.log(chat_entry);
+  chat_log.dataset.author = JSON.stringify(chat_entry.author);
   chat_log.classList.add('chat_log');
-  if ('source' in chat_entry) {
-    chat_log.classList.add(chat_entry.source.toLowerCase());
-  }
-  let color = 'inherit';
-  if ('author_color' in chat_entry) {
-    color = chat_entry.author_color;
-  }
   let text_span = document.createElement('span');
-  if ('avatar_url' in chat_entry) {
-    let avatar = document.createElement('img');
-    avatar.src = chat_entry.avatar_url;
-    avatar.classList.add('avatar');
-    text_span.appendChild(avatar);
-  }
-  if ('twitch_user_id' in chat_entry) {
-    chat_log.dataset.twitch_user_id = chat_entry.twitch_user_id;
-  }
-  if ('author' in chat_entry) {
-    chat_log.dataset.author = chat_entry.author;
-    text_span.innerHTML += '<strong style="color:' + color + '">' + chat_entry.author + '</strong>: ' + chat_entry.message;
-  } else {
-    text_span.innerHTML += chat_entry.message;
-  }
+  let author_name = AuthorName(chat_entry.author);
+  text_span.innerHTML = chat_entry.html;
 
   let control_panel = document.createElement('div');
   control_panel.classList.add('control_panel');
-  let mute_button = document.createElement('button');
-  mute_button.textContent = '🤫';
-  mute_button.title = 'Mute ' + chat_entry.author;
-  mute_button.onclick = function () {
-    ws.send(JSON.stringify({ call: 'ToggleMuted', args: [chat_entry.author] }));
-  };
-  control_panel.appendChild(mute_button);
-  if ('twitch_user_id' in chat_entry) {
+
+  let can_mute = 'twitch' in chat_entry.author || 'youtube' in chat_entry.author;
+  if (can_mute) {
+    let mute_button = document.createElement('button');
+    mute_button.textContent = '🤫';
+    mute_button.title = 'Mute ' + author_name;
+    mute_button.onclick = function () {
+      ws.send(JSON.stringify({ call: 'ToggleMuted', args: [chat_entry.author] }));
+    };
+    control_panel.appendChild(mute_button);
+  }
+  let can_ban = 'twitch' in chat_entry.author;
+  if (can_ban) {
     let ban_button = document.createElement('button');
-    let twitch_user_id = chat_entry.twitch_user_id;
-    let user_name = chat_entry.author;
     ban_button.textContent = '💀';
-    ban_button.title = 'Ban ' + user_name;
+    ban_button.title = 'Ban ' + author_name;
     ban_button.onclick = function () {
-      ban_button.innerHTML = 'Ban <strong>' + user_name + '</strong>? ✅';
-      ban_button.title = 'Are you sure you want to ban ' + user_name + '?';
+      ban_button.innerHTML = 'Ban <strong>' + author_name + '</strong>? ✅';
+      ban_button.title = 'Are you sure you want to ban ' + author_name + '?';
       ban_button.onclick = function () {
-        ws.send(JSON.stringify({ call: 'BanTwitch', args: [twitch_user_id, user_name] }));
+        ws.send(JSON.stringify({ call: 'Ban', args: [chat_entry.author] }));
       };
     };
     control_panel.appendChild(ban_button);

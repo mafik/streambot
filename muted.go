@@ -2,15 +2,21 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+	"encoding/json"
 	"os"
 	"path"
+	"sync"
 )
 
-var muted = make(map[string]bool)
+var muted *sync.Map
 
-func readMuted() map[string]bool {
-	muted := make(map[string]bool)
+func IsMuted(user UserVariant) bool {
+	_, is_muted := muted.Load(user.Key())
+	return is_muted
+}
+
+func readMuted() *sync.Map {
+	muted := &sync.Map{}
 	path := path.Join(baseDir, "muted.txt")
 	file, err := os.Open(path)
 	if err != nil {
@@ -20,7 +26,13 @@ func readMuted() map[string]bool {
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		muted[scanner.Text()] = true
+		var author UserVariant
+		err = json.Unmarshal([]byte(scanner.Text()), &author)
+		if err != nil {
+			warn_color.Println("Couldn't unmarshal muted user:", err)
+			continue
+		}
+		muted.Store(author.Key(), author)
 	}
 	if err := scanner.Err(); err != nil {
 		warn_color.Println("Couldn't read muted.txt:", err)
@@ -28,7 +40,7 @@ func readMuted() map[string]bool {
 	return muted
 }
 
-func saveMuted(muted map[string]bool) {
+func saveMuted(muted *sync.Map) {
 	path := path.Join(baseDir, "muted.txt")
 	file, err := os.Create(path)
 	if err != nil {
@@ -36,36 +48,52 @@ func saveMuted(muted map[string]bool) {
 		return
 	}
 	defer file.Close()
-	for user := range muted {
-		file.WriteString(user + "\n")
-	}
+	muted.Range(func(key, value interface{}) bool {
+		bytes, err := json.Marshal(value)
+		if err != nil {
+			warn_color.Println("Couldn't marshal muted user:", err)
+			return true
+		}
+		file.WriteString(string(bytes) + "\n")
+		return true
+	})
 }
 
-func ToggleMuted(args ...string) {
+const BOT_ICON = `<img src="bot.svg" class="emoji">`
+const MUTED_ICON = `<img src="muted.svg" class="emoji">`
+const UNMUTED_ICON = `<img src="unmuted.svg" class="emoji">`
+
+func ToggleMuted(args ...json.RawMessage) {
 	if len(args) != 1 {
 		warn_color.Println("ToggleMuted: wrong number of arguments:", args)
 		return
 	}
-	user := args[0]
-
-	MainChannel <- func() {
-		if muted[user] {
-			chat_color.Println("Unmuting", user)
-			delete(muted, user)
-			MainOnChatEntry(ChatEntry{
-				Source:  "Bot",
-				Message: fmt.Sprintf(` <img class="emoji" src="/static/unmuted.svg"> <strong>%s</strong>`, user),
-				skipTTS: true,
-			})
-		} else {
-			chat_color.Println("Muting", user)
-			muted[user] = true
-			MainOnChatEntry(ChatEntry{
-				Source:  "Bot",
-				Message: fmt.Sprintf(` <img class="emoji" src="/static/muted.svg"> <strong>%s</strong>`, user),
-				skipTTS: true,
-			})
-		}
-		saveMuted(muted)
+	var user UserVariant
+	err := json.Unmarshal(args[0], &user)
+	if err != nil {
+		warn_color.Println("ToggleMuted: couldn't unmarshal user:", err)
+		return
 	}
+
+	key := user.Key()
+	username := user.DisplayName()
+	_, is_muted := muted.Load(key)
+	if is_muted {
+		chat_color.Println("Unmuting", username)
+		muted.Delete(key)
+		MainChannel <- ChatEntry{
+			Author: user,
+			HTML:   BOT_ICON + ` ` + UNMUTED_ICON + ` ` + user.HTML(),
+		}
+	} else {
+		chat_color.Println("Muting", username)
+		user.BotUser = nil
+		muted.Store(key, user)
+		user.BotUser = &BotUser{}
+		MainChannel <- ChatEntry{
+			Author: user,
+			HTML:   BOT_ICON + ` ` + MUTED_ICON + ` ` + user.HTML(),
+		}
+	}
+	saveMuted(muted)
 }
