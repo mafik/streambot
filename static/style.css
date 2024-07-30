@@ -256,11 +256,13 @@ body {
 
 #ecg {
   position: fixed;
-  bottom: 0;
-  left: calc(50vw - 100px);
-  border: 2px solid #cf7932;
-  border-bottom: none;
-  background: rgba(255, 202, 158, 0.263);
+  top: 0;
+  right: 0;
+  border: 2px solid #37cf32;
+  border-top: none;
+  border-right: none;
+  background: rgba(0, 48, 14, 0.512);
   z-index: 2;
-  border-radius: 20px 80px 0 0;
+  border-radius: 0 0 0 20px;
+  backdrop-filter: blur(10px);
 }

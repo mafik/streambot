@@ -32,46 +32,76 @@ function Pong(component) {
 }
 let canvas = document.getElementById('ecg');
 function DrawECG(t) {
-  canvas.height = 40 * Object.keys(ecg_pings).length + 30;
+  canvas.height = 40 * Object.keys(ecg_pings).length + 20;
   let ctx = canvas.getContext('2d');
   let now = Date.now();
   // ctx.clearRect(0, 0, canvas.width, canvas.height);
-  let y = 0;
+  let y = 10;
   ctx.strokeStyle = '#ffffff';
-  ctx.font = '40px Belanosima';
+  ctx.font = '40px Audiowide';
+  ctx.lineJoin = 'round';
+  ctx.miterLimit = 100;
   for (let component in ecg_pings) {
     y += 40;
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = '#ffffff';
-    ctx.strokeText(component, 10, y);
-    ctx.fillStyle = '#8054a4';
-    ctx.fillText(component, 10, y);
     let pings = ecg_pings[component];
     ctx.beginPath();
-    let h = y;
-    ctx.moveTo(0, h);
+    let h_good = y - 40;
+    let h_bad = y;
+    let h = h_bad;
+    if (pings.length > 0 && pings[0].type == 'pong') {
+      h = h_good;
+    }
+    let line = new Path2D();
+    line.moveTo(canvas.width, h);
     let widthTime = 10000;
-    for (let i = pings.length - 1; i >= 0; --i) {
+    for (let i = 0; i < pings.length; ++i) {
       let entry = pings[i];
       let time = entry.time;
       let x = (now - time) / widthTime * canvas.width;
       if (entry.type == 'ping') {
-        ctx.lineTo(x, h + 20);
-        ctx.lineTo(x, h);
+        line.lineTo(x, h);
+        line.lineTo(x, h_bad);
+        h = h_bad;
       } else if (entry.type == 'pong') {
-        ctx.lineTo(x, h);
-        ctx.lineTo(x, h - 20);
+        line.lineTo(x, h_good - 4);
+        line.lineTo(x, h_good);
+        h = h_good;
       }
     }
-    ctx.lineTo(canvas.width, h);
+    line.lineTo(0, h);
+
+    let good_shape = new Path2D(line);
+    good_shape.lineTo(0, h_bad);
+    good_shape.lineTo(canvas.width, h_bad);
+    good_shape.closePath();
+    let good_gradient = ctx.createLinearGradient(0, h_good, 0, h_bad);
+    good_gradient.addColorStop(0, 'rgba(0, 255, 0, 0.5)');
+    good_gradient.addColorStop(1, 'rgba(0, 255, 0, 0.0)');
+    ctx.fillStyle = good_gradient;
+    ctx.fill(good_shape);
+
+    let bad_shape = new Path2D(line);
+    bad_shape.lineTo(0, h_good);
+    bad_shape.lineTo(canvas.width, h_good);
+    bad_shape.closePath();
+    let bad_gradient = ctx.createLinearGradient(0, h_good, 0, h_bad);
+    bad_gradient.addColorStop(1, 'rgba(255, 0, 0, 1.0)');
+    bad_gradient.addColorStop(0, 'rgba(255, 0, 0, 0.0)');
+    ctx.fillStyle = bad_gradient;
+    ctx.fill(bad_shape);
+
     ctx.lineWidth = 4;
     ctx.filter = "blur(4px)";
-    ctx.strokeStyle = '#a074c4';
-    ctx.stroke();
-    ctx.filter = "blur(0px)";
-    ctx.lineWidth = 1;
     ctx.strokeStyle = '#ffffff';
-    ctx.stroke();
+    ctx.stroke(line);
+    ctx.filter = "blur(0px)";
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#ffffff';
+    ctx.stroke(line);
+    ctx.fillStyle = '#ffffff';
+    // ctx.globalCompositeOperation = 'difference';
+    ctx.fillText(component, 10, y - 7);
+    ctx.globalCompositeOperation = 'normal';
   }
   requestAnimationFrame(DrawECG);
 }
@@ -207,7 +237,6 @@ function AuthorName(author) {
 }
 function OnChatMessage(chat_entry) {
   let chat_log = document.createElement('div');
-  console.log(chat_entry);
   chat_log.dataset.author = JSON.stringify(chat_entry.author);
   chat_log.classList.add('chat_log');
   let text_span = document.createElement('span');
