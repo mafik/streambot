@@ -82,7 +82,8 @@ func OBS() {
 		backoff.Success()
 
 		lastMicActivity := time.Now()
-		for {
+		connected := true
+		for connected {
 			select {
 			case msg := <-OBSChannel:
 				switch t := msg.(type) {
@@ -97,6 +98,7 @@ func OBS() {
 			case obsEvent := <-obs.IncomingEvents:
 				if obsEvent == nil {
 					col.Println("OBS disconnected")
+					connected = false
 					break
 				}
 				switch t := obsEvent.(type) {
