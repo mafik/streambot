@@ -37,11 +37,12 @@ func ttsApiRequest(method string, params map[string]string) *http.Request {
 func ttsGenerateRequest(text, characterVoice, narratorVoiceArg string) *http.Request {
 	params := map[string]string{
 		"text_input":          text,
-		"text_filtering":      "standard",
+		"text_filtering":      "html",
 		"character_voice_gen": characterVoice,
 		"language":            "en",
 		"output_file_name":    "tts_output",
 		"autoplay":            "false",
+		"text_not_inside":     "character",
 		// "autoplay_volume":     "0.8",
 		"temperature": "1.0",
 	}
@@ -83,7 +84,7 @@ func VocalizeHTML(text string) string {
 		pronunciation = strings.Join(strings.Split(pronunciation, ""), "-")
 		message = strings.ReplaceAll(message, acronym, pronunciation)
 	}
-	return message
+	return message + " ." // adding dot makes TTS pronounce some short phrases such as "hi"
 }
 
 func SynthesizeAllTalk(r *http.Request) ([]byte, error) {
@@ -182,7 +183,7 @@ func TTS() {
 					if lastAuthor == authorKey {
 						r = ttsGenerateRequest(fmt.Sprintf("\"%s\"", message), "SMOrc.wav", narratorVoiceCfg)
 					} else {
-						r = ttsGenerateRequest(fmt.Sprintf("*%s says: * \"%s\"", t.Author.DisplayName(), message), "SMOrc.wav", narratorVoiceCfg)
+						r = ttsGenerateRequest(fmt.Sprintf("* %s says: * \" %s \"", t.Author.DisplayName(), message), "SMOrc.wav", narratorVoiceCfg)
 						lastAuthor = authorKey
 					}
 					wav, err := SynthesizeAllTalk(r)
