@@ -98,10 +98,10 @@ function DrawECG(t) {
     ctx.lineWidth = 2;
     ctx.strokeStyle = '#ffffff';
     ctx.stroke(line);
-    ctx.fillStyle = '#ffffff';
-    // ctx.globalCompositeOperation = 'difference';
+    ctx.globalCompositeOperation = 'luminosity';
+    ctx.fillStyle = '#dddddd';
     ctx.fillText(component, 10, y - 7);
-    ctx.globalCompositeOperation = 'normal';
+    ctx.globalCompositeOperation = 'source-over';
   }
   requestAnimationFrame(DrawECG);
 }
@@ -302,6 +302,9 @@ function Connect() {
   ws.onclose = OnClose;
 }
 function OnClose() {
+  for (let component of Object.keys(ecg_pings)) {
+    Ping(component);
+  }
   chat.textContent = 'Connection lost. Reconnecting...';
   setTimeout(Connect, 1000);
 }

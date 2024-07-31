@@ -263,6 +263,5 @@ body {
   border-right: none;
   background: rgba(0, 48, 14, 0.512);
   z-index: 2;
-  border-radius: 0 0 0 20px;
   backdrop-filter: blur(10px);
 }
