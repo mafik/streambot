@@ -13,7 +13,7 @@ import (
 	"github.com/nicklaw5/helix/v2"
 )
 
-const twitchBotUsername = "bot_maf"
+const twitchBotUsername = "maf_pl"
 const twitchBroadcasterUsername = "maf_pl"
 const TWITCH_ICON = `<img src="twitch.svg" class="emoji">`
 

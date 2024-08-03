@@ -9,6 +9,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/gorilla/websocket"
+	"github.com/nicklaw5/helix/v2"
 )
 
 const (
@@ -125,6 +126,38 @@ var JavaScriptHandlers = map[string]JavaScriptHandler{
 			HTML: html,
 		}
 		fmt.Println("Debug Alert:", html)
+	},
+	"SetTitle": func(args ...json.RawMessage) {
+		var title string
+		err := json.Unmarshal(args[0], &title)
+		if err != nil {
+			fmt.Println("Can't unmarshal title: ", err)
+			return
+		}
+		if title == "" {
+			fmt.Println("Cannot set title to empty string")
+			return
+		}
+		fmt.Printf("Changing stream title to \"%s\"\n", title)
+		TwitchHelixChannel <- func(client *helix.Client) {
+			if title == twitchTitle {
+				return
+			}
+			resp, err := client.EditChannelInformation(&helix.EditChannelInformationParams{
+				BroadcasterID: twitchBroadcasterID,
+				Title:         title,
+			})
+			if err != nil {
+				fmt.Println("Couldn't edit Twitch title:", err)
+				return
+			}
+			if resp.StatusCode != 204 {
+				fmt.Println("Couldn't edit Twitch title:", resp.ErrorMessage)
+				return
+			}
+			twitchTitle = title
+			fmt.Println("Twitch title changed to:", title)
+		}
 	},
 }
 

@@ -3,7 +3,7 @@ html {
   font-size: 40px;
   color: white;
   background: rgba(0, 0, 0, 0);
-  text-align: right;
+  text-rendering: optimizeLegibility;
 }
 
 @keyframes show {
@@ -33,7 +33,7 @@ html {
   opacity: 0;
   transform: scale(0%);
   transition: transform 300ms, opacity 300ms;
-  padding: .2em 0;
+  padding: 0;
   border-radius: .5em;
   background: rgba(255, 255, 255, 0.5);
   z-index: 99;
@@ -57,21 +57,40 @@ html {
   transform: translateY(48px);
 }
 
-button {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  font-size: 1em;
-  cursor: pointer;
+button,
+input {
+  font-size: inherit;
   border-radius: .3em;
+  padding: 0 .2em;
+  margin: .2em;
+  text-shadow: none;
+}
+
+button {
+  font-family: "Audiowide";
+  cursor: pointer;
   background: linear-gradient(180deg, #4c4c4c, #333);
   color: white;
-  border: .05em solid rgba(255, 255, 255, 0.5);
-  padding: 0 .2em;
-  margin: 0 .2em;
-  text-shadow: none;
+  border: .05em outset #777;
+  box-shadow: 0 .1em .2em rgba(0, 0, 0, 0.5);
 }
 
 button:hover {
   background: linear-gradient(180deg, #6c6c6c, #555);
+}
+
+button+button,
+input+button {
+  margin-left: 0;
+}
+
+input {
+  /* letter-spacing: -2px; */
+  font-family: "Instrument Serif";
+  background: #eee;
+  box-shadow: 0 .1em .2em rgba(0, 0, 0, 0.5) inset;
+  color: black;
+  border: .05em solid #000;
 }
 
 .chat_log>span {
@@ -95,6 +114,7 @@ body {
 #chat {
   display: flex;
   flex-direction: column-reverse;
+  text-align: right;
 }
 
 #chat img.emoji {
@@ -109,7 +129,7 @@ body {
   position: fixed;
   bottom: 0;
   left: 80px;
-  font: 44px "Belanosima Regular";
+  font: 44px "Belanosima";
   text-align: left;
   vertical-align: middle;
   width: calc(100vw - 160px);

@@ -10,22 +10,48 @@
       background: black;
     }
 
-    #audio {
-      top: 0;
-      left: 0;
+    body {
+      display: flex;
       width: 100vw;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    #audio {
+      position: relative;
+      left: auto;
+      bottom: auto;
+      display: block;
+      flex-basis: 60px;
+      font-size: 55px;
+      background: #333;
+      transform-origin: left;
+      text-wrap: nowrap;
+      flex-grow: 0;
+      z-index: inherit;
+      overflow: visible;
+      letter-spacing: -2px;
+    }
+
+    #title {
+      background: #222;
+      flex-grow: 0;
+      display: flex;
+    }
+
+    #title-input {
+      flex-grow: 1;
     }
 
     #chat {
-      width: 100vw;
-      height: 100vh;
+      flex-basis: 0;
+      flex-grow: 1;
+      overflow-x: hidden;
+      overflow-y: scroll;
     }
 
-    #alert-form>* {
-      font-size: inherit;
-      padding: 5px;
-      margin: 5px;
-      border-radius: 10px;
+    #ecg {
+      border: none;
     }
 
     #alert-form {
@@ -47,16 +73,19 @@
 </head>
 
 <body>
+  <div id="audio"><span id="audio-highlight">No song playing</span><span id="audio-shadow">No song playing</span><span id="audio-fill">No song playing</span></div>
   <div id="alert-form">
-    <textarea id="alert-input" placeholder="Alert message"></textarea>
-    <button id="alert-submit" onclick="ws.send(JSON.stringify({ call: 'ShowAlert', args: [document.getElementById('alert-input').value] }));">Send</button>
+    <textarea id="alert-input" placeholder="Alert message"></textarea><button id="alert-submit" onclick="ws.send(JSON.stringify({ call: 'ShowAlert', args: [document.getElementById('alert-input').value] }));">Send</button>
+  </div>
+  <div id="title">
+    <input id="title-input" placeholder="Stream title">
+    <button id="title-submit" onclick="ws.send(JSON.stringify({ call: 'SetTitle', args: [document.getElementById('title-input').value] }));">Update</button>
   </div>
   <div id="alert">
     <div id="alert-content"></div>
   </div>
   <canvas id="ecg" width="200" height="70"></canvas>
   <div id="chat">Connecting...</div>
-  <div id="audio"><span id="audio-highlight">No song playing</span><span id="audio-shadow">No song playing</span><span id="audio-fill">No song playing</span></div>
   <script src="NoSleep.min.js"></script>
   <script src="anime.min.js"></script>
   <script src="script.js"></script>

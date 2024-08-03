@@ -162,6 +162,7 @@ func main() {
 			Webserver.Call("SetAudioMessage", audioMessage)
 		case client := <-newWebsocketClients:
 			client.Call("SetAudioMessage", lastAudioMessage)
+			client.Call("SetStreamTitle", twitchTitle)
 			for _, entry := range chat_log {
 				client.Call("OnChatMessage", entry)
 			}

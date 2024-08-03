@@ -290,6 +290,10 @@ function OnMessage(event) {
     }
   }
 }
+function SetStreamTitle(title) {
+  document.title = title;
+  document.getElementById('title-input').value = title;
+}
 var ws;
 function Connect() {
   if (location.host == "" || location.host == "absolute") {

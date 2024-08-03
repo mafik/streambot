@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"path"
 	"streambot/backoff"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/nicklaw5/helix/v2"
@@ -87,6 +88,7 @@ func Ban(args ...json.RawMessage) {
 	}
 }
 
+var twitchTitle string
 var TwitchHelixChannel = make(chan interface{}, 100)
 
 func TwitchHelixBot() {
@@ -117,12 +119,33 @@ func TwitchHelixBot() {
 			continue
 		}
 
+		var credentialRefreshesLastMinute = 0
+		var lastCredentialRefresh time.Time
+
 		client, err := helix.NewClient(&helix.Options{
 			ClientID:        clientID,
 			ClientSecret:    clientSecret,
 			UserAccessToken: accessToken,
 			RefreshToken:    refreshToken,
 			RedirectURI:     "http://localhost:3447/twitch-auth",
+			RateLimitFunc: func(resp *helix.Response) error {
+				if resp.StatusCode == http.StatusTooManyRequests {
+					return fmt.Errorf("rate limited: %s", resp.ErrorMessage)
+				}
+				_, ok := resp.Data.(*helix.AccessCredentials)
+				if ok {
+					if time.Since(lastCredentialRefresh) < time.Minute {
+						credentialRefreshesLastMinute++
+					} else {
+						credentialRefreshesLastMinute = 0
+						lastCredentialRefresh = time.Now()
+					}
+					if credentialRefreshesLastMinute > 5 {
+						return fmt.Errorf("too many credential refreshes")
+					}
+				}
+				return nil
+			},
 		})
 		if err != nil {
 			fmt.Println(err)
@@ -131,7 +154,7 @@ func TwitchHelixBot() {
 		client.OnUserAccessTokenRefreshed(OnUserAccessTokenRefreshed)
 		twitchAuthUrl = client.GetAuthorizationURL(&helix.AuthorizationURLParams{
 			ResponseType: "code",
-			Scopes:       []string{"moderator:manage:banned_users", "moderator:read:followers"},
+			Scopes:       []string{"channel:manage:broadcast", "moderator:manage:banned_users", "moderator:read:followers"},
 		})
 		WriteStringToFile(path.Join(baseDir, "twitch_auth_url.txt"), twitchAuthUrl)
 		getUsersResp, err := client.GetUsers(&helix.UsersParams{Logins: []string{twitchBroadcasterUsername, twitchBotUsername}})
@@ -142,10 +165,21 @@ func TwitchHelixBot() {
 		for _, user := range getUsersResp.Data.Users {
 			if user.Login == twitchBroadcasterUsername {
 				twitchBroadcasterID = user.ID
-			} else if user.Login == twitchBotUsername {
+			}
+			if user.Login == twitchBotUsername {
 				twitchBotID = user.ID
 			}
 		}
+
+		getChannelInfoResp, err := client.GetChannelInformation(&helix.GetChannelInformationParams{
+			BroadcasterID: twitchBroadcasterID,
+		})
+		if err != nil {
+			twitchColor.Println("Couldn't get channel info: ", err)
+			continue
+		}
+		twitchTitle = getChannelInfoResp.Data.Channels[0].Title
+		Webserver.Call("SetStreamTitle", twitchTitle)
 
 		for msg := range TwitchHelixChannel {
 			switch t := msg.(type) {
