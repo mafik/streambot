@@ -367,6 +367,7 @@ func YouTubeBot() {
 	}
 	for {
 		outerBackoff.Attempt()
+		Webserver.Call("Ping", "YouTube")
 
 		client := getClient(youtube.YoutubeScope)
 		youtube, err := youtube.NewService(context.Background(), option.WithHTTPClient(client))
@@ -429,6 +430,7 @@ func YouTubeBot() {
 		}
 		for {
 			innerBackoff.Attempt()
+			Webserver.Call("Ping", "YouTube")
 			chat, newContinuation, sleepMillis, error := FetchChatMessages(continuation, cfg)
 			if error == ErrLiveStreamOver {
 				color.Println("Live stream over")
@@ -439,6 +441,7 @@ func YouTubeBot() {
 				continue
 			}
 			innerBackoff.Success()
+			Webserver.Call("Pong", "YouTube")
 			continuation = newContinuation
 
 			if firstRequest {

@@ -8,6 +8,7 @@ function Reload() {
 }
 let ecg_pings = {
   'Twitch': [],
+  'YouTube': [],
 };
 function Ping(component) {
   if (!(component in ecg_pings)) {
@@ -26,23 +27,25 @@ function Pong(component) {
     type: 'pong',
     time: Date.now(),
   });
-  while (ecg_pings[component].length > 10) {
+  while (ecg_pings[component].length > 30) {
     ecg_pings[component].shift();
   }
 }
 let canvas = document.getElementById('ecg');
 function DrawECG(t) {
-  canvas.height = 40 * Object.keys(ecg_pings).length + 20;
+  let W = 250;
+  canvas.width = W * Object.keys(ecg_pings).length;
+  canvas.height = 60;
   let ctx = canvas.getContext('2d');
   let now = Date.now();
   // ctx.clearRect(0, 0, canvas.width, canvas.height);
-  let y = 10;
+  let y = 50;
+  let X = 0;
   ctx.strokeStyle = '#ffffff';
   ctx.font = '40px Audiowide';
   ctx.lineJoin = 'round';
   ctx.miterLimit = 100;
   for (let component in ecg_pings) {
-    y += 40;
     let pings = ecg_pings[component];
     ctx.beginPath();
     let h_good = y - 40;
@@ -52,12 +55,15 @@ function DrawECG(t) {
       h = h_good;
     }
     let line = new Path2D();
-    line.moveTo(canvas.width, h);
+    line.moveTo(W, h);
     let widthTime = 10000;
     for (let i = 0; i < pings.length; ++i) {
       let entry = pings[i];
       let time = entry.time;
-      let x = (now - time) / widthTime * canvas.width;
+      let x = (now - time) / widthTime * W;
+      if (x >= W) {
+        x = W;
+      }
       if (entry.type == 'ping') {
         line.lineTo(x, h);
         line.lineTo(x, h_bad);
@@ -72,7 +78,7 @@ function DrawECG(t) {
 
     let good_shape = new Path2D(line);
     good_shape.lineTo(0, h_bad);
-    good_shape.lineTo(canvas.width, h_bad);
+    good_shape.lineTo(W, h_bad);
     good_shape.closePath();
     let good_gradient = ctx.createLinearGradient(0, h_good, 0, h_bad);
     good_gradient.addColorStop(0, 'rgba(0, 255, 0, 0.5)');
@@ -82,7 +88,7 @@ function DrawECG(t) {
 
     let bad_shape = new Path2D(line);
     bad_shape.lineTo(0, h_good);
-    bad_shape.lineTo(canvas.width, h_good);
+    bad_shape.lineTo(W, h_good);
     bad_shape.closePath();
     let bad_gradient = ctx.createLinearGradient(0, h_good, 0, h_bad);
     bad_gradient.addColorStop(1, 'rgba(255, 0, 0, 1.0)');
@@ -99,9 +105,14 @@ function DrawECG(t) {
     ctx.strokeStyle = '#ffffff';
     ctx.stroke(line);
     ctx.globalCompositeOperation = 'luminosity';
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 4;
+    ctx.lineJoin = 'miter';
+    ctx.strokeText(component, 10, y - 7);
     ctx.fillStyle = '#dddddd';
     ctx.fillText(component, 10, y - 7);
     ctx.globalCompositeOperation = 'source-over';
+    ctx.translate(W, 0);
   }
   requestAnimationFrame(DrawECG);
 }

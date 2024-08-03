@@ -127,6 +127,10 @@ func NetworkSetup() {
 func main() {
 	var err error
 
+	newWebsocketClients := make(chan *WebsocketClient, 16)
+
+	Webserver = StartWebserver(newWebsocketClients)
+
 	go NetworkSetup()
 
 	go ObsGaze("Main", "Gaze")
@@ -150,10 +154,6 @@ func main() {
 	if err != nil {
 		warn_color.Println("Error while reading chat_log.txt:", err)
 	}
-
-	newWebsocketClients := make(chan *WebsocketClient, 16)
-
-	Webserver = StartWebserver(newWebsocketClients)
 
 	for {
 		select {
