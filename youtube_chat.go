@@ -357,56 +357,49 @@ func AddCookies(cookies []*http.Cookie) {
 	customCookies = cookies
 }
 
-var YouTubeBotChannel = make(chan interface{})
+type YouTubeFunc func(*youtube.Service) error
 
-func YouTubeBot() {
-	color := color.New(color.FgRed)
+var YouTubeBotChannel = make(chan YouTubeFunc)
+var youtubeColor = color.New(color.FgRed)
+var youtubeVideoId string
+
+func YouTubeChatBot() {
 	outerBackoff := backoff.Backoff{
-		Color:       color,
+		Color:       youtubeColor,
 		Description: "YouTube Live Chat",
 	}
 	for {
 		outerBackoff.Attempt()
-		Webserver.Call("Ping", "YouTube")
+		videoIdChan := make(chan string)
+		YouTubeBotChannel <- func(youtube *youtube.Service) error {
+			call := youtube.LiveBroadcasts.List([]string{"id", "snippet", "status"})
+			call.Mine(true)
+			listResp, err := call.Do()
+			if err != nil {
+				return err
+			}
 
-		client := getClient(youtube.YoutubeScope)
-		youtube, err := youtube.NewService(context.Background(), option.WithHTTPClient(client))
-		if err != nil {
-			color.Println("Error creating YouTube client:", err)
-			continue
-		}
-		call := youtube.LiveBroadcasts.List([]string{"id", "snippet", "status"})
-		call.Mine(true)
-		listResp, err := call.Do()
-		if err != nil {
-			var retrieveError *oauth2.RetrieveError
-			if errors.As(err, &retrieveError) {
-				if retrieveError.ErrorCode == "invalid_grant" {
-					color.Println("Invalid grant. Deleting bad token... Authorization page will be open on the next attempt.")
-					clearYouTubeToken()
+			for _, result := range listResp.Items {
+				if result.Status.LifeCycleStatus == "complete" {
 					continue
 				}
+				videoIdChan <- result.Id
+				return nil
 			}
-			color.Println("Error in search:", err)
-			continue
+			videoIdChan <- ""
+			return nil
 		}
+		youtubeVideoId = <-videoIdChan
 
-		var videoId string
-		for _, result := range listResp.Items {
-			if result.Status.LifeCycleStatus == "complete" {
-				continue
-			}
-			// result.Snippet.LiveChatId
-			videoId = result.Id
-		}
-		if videoId == "" {
+		if youtubeVideoId == "" {
 			dashboardURL := fmt.Sprintf("https://studio.youtube.com/channel/%s/livestreaming/dashboard?c=%s", YT_CHANNEL_ID, YT_CHANNEL_ID)
-			color.Printf("No live stream found. Opening %s to create a new one!\n", dashboardURL)
+			youtubeColor.Printf("No live stream found. Opening %s to create a new one!\n", dashboardURL)
 			openURL(dashboardURL)
 			time.Sleep(15 * time.Second) // give some time for the YT dashboard to create a new stream
 			continue
 		}
-		color.Println("Connecting to https://youtu.be/" + videoId)
+
+		youtubeColor.Println("Connecting to https://youtu.be/" + youtubeVideoId)
 
 		customCookies := []*http.Cookie{
 			{Name: "PREF",
@@ -417,27 +410,28 @@ func YouTubeBot() {
 				MaxAge: 300},
 		}
 		AddCookies(customCookies)
-		continuation, cfg, error := ParseInitialData("https://www.youtube.com/watch?v=" + videoId)
+		continuation, cfg, error := ParseInitialData("https://www.youtube.com/watch?v=" + youtubeVideoId)
 		if error != nil {
-			color.Println("Error in ParseInitialData:", error)
+			youtubeColor.Println("Error in ParseInitialData:", error)
 			continue
 		}
 		outerBackoff.Success()
+
 		firstRequest := true
 		innerBackoff := backoff.Backoff{
-			Color:       color,
-			Description: "YouTube Live Chat",
+			Color:       youtubeColor,
+			Description: "YouTube Live Chat Loop",
 		}
 		for {
 			innerBackoff.Attempt()
 			Webserver.Call("Ping", "YouTube")
 			chat, newContinuation, sleepMillis, error := FetchChatMessages(continuation, cfg)
 			if error == ErrLiveStreamOver {
-				color.Println("Live stream over")
+				youtubeColor.Println("Live stream over")
 				break
 			}
 			if error != nil {
-				color.Println("Error in FetchChatMessages", error)
+				youtubeColor.Println("Error in FetchChatMessages", error)
 				continue
 			}
 			innerBackoff.Success()
@@ -459,4 +453,40 @@ func YouTubeBot() {
 			time.Sleep(time.Duration(sleepMillis) * time.Millisecond)
 		} // inner for
 	} // outer for
+}
+
+func YouTubeBot() {
+	go YouTubeChatBot()
+	backoff := backoff.Backoff{
+		Color:       youtubeColor,
+		Description: "YouTube API",
+	}
+	for {
+		backoff.Attempt()
+
+		client := getClient(youtube.YoutubeScope)
+		youtube, err := youtube.NewService(context.Background(), option.WithHTTPClient(client))
+		if err != nil {
+			youtubeColor.Println("Error creating YouTube client:", err)
+			continue
+		}
+
+		for fun := range YouTubeBotChannel {
+			err = fun(youtube)
+			if err != nil {
+				var retrieveError *oauth2.RetrieveError
+				if errors.As(err, &retrieveError) {
+					if retrieveError.ErrorCode == "invalid_grant" {
+						youtubeColor.Println("Invalid grant. Deleting bad token... Authorization page will be open on the next attempt.")
+						clearYouTubeToken()
+						break
+					}
+				}
+				youtubeColor.Println("Error in YouTube:", err)
+				continue
+			} else {
+				backoff.Success()
+			}
+		}
+	}
 }
