@@ -17,6 +17,7 @@ import (
 
 	"github.com/fatih/color"
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
@@ -367,7 +368,7 @@ func YouTubeBot() {
 	for {
 		outerBackoff.Attempt()
 
-		client := getClient(false, youtube.YoutubeScope)
+		client := getClient(youtube.YoutubeScope)
 		youtube, err := youtube.NewService(context.Background(), option.WithHTTPClient(client))
 		if err != nil {
 			color.Println("Error creating YouTube client:", err)
@@ -377,6 +378,14 @@ func YouTubeBot() {
 		call.Mine(true)
 		listResp, err := call.Do()
 		if err != nil {
+			var retrieveError *oauth2.RetrieveError
+			if errors.As(err, &retrieveError) {
+				if retrieveError.ErrorCode == "invalid_grant" {
+					color.Println("Invalid grant. Deleting bad token... Authorization page will be open on the next attempt.")
+					clearYouTubeToken()
+					continue
+				}
+			}
 			color.Println("Error in search:", err)
 			continue
 		}
@@ -390,8 +399,10 @@ func YouTubeBot() {
 			videoId = result.Id
 		}
 		if videoId == "" {
-			// TODO: create one ourselves...
-			color.Printf("No live stream found. Visit https://studio.youtube.com/channel/%s/livestreaming/dashboard?c=%s to create a new one!\n", YT_CHANNEL_ID, YT_CHANNEL_ID)
+			dashboardURL := fmt.Sprintf("https://studio.youtube.com/channel/%s/livestreaming/dashboard?c=%s", YT_CHANNEL_ID, YT_CHANNEL_ID)
+			color.Printf("No live stream found. Opening %s to create a new one!\n", dashboardURL)
+			openURL(dashboardURL)
+			time.Sleep(15 * time.Second) // give some time for the YT dashboard to create a new stream
 			continue
 		}
 		color.Println("Connecting to https://youtu.be/" + videoId)
