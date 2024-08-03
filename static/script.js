@@ -113,6 +113,7 @@ function DrawECG(t) {
     ctx.fillText(component, 10, y - 7);
     ctx.globalCompositeOperation = 'source-over';
     ctx.translate(W, 0);
+    ctx.lineJoin = 'round';
   }
   requestAnimationFrame(DrawECG);
 }
