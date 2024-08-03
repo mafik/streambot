@@ -10,6 +10,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/gorilla/websocket"
 	"github.com/nicklaw5/helix/v2"
+	"google.golang.org/api/youtube/v3"
 )
 
 const (
@@ -139,6 +140,7 @@ var JavaScriptHandlers = map[string]JavaScriptHandler{
 			return
 		}
 		fmt.Printf("Changing stream title to \"%s\"\n", title)
+		Webserver.Call("SetStreamTitle", title)
 		TwitchHelixChannel <- func(client *helix.Client) {
 			if title == twitchTitle {
 				return
@@ -156,7 +158,33 @@ var JavaScriptHandlers = map[string]JavaScriptHandler{
 				return
 			}
 			twitchTitle = title
-			fmt.Println("Twitch title changed to:", title)
+		}
+		YouTubeBotChannel <- func(youtube *youtube.Service) error {
+			if youtubeVideoId == "" {
+				return nil
+			}
+			listCall := youtube.Videos.List([]string{"id", "snippet"})
+			listCall.Id(youtubeVideoId)
+			resp, err := listCall.Do()
+			if err != nil {
+				return err
+			}
+			if len(resp.Items) == 0 {
+				fmt.Println("Couldn't find YouTube video with ID:", youtubeVideoId)
+				return nil
+			}
+			video := resp.Items[0]
+			video.Id = youtubeVideoId // this is not returned because we specify fields
+			// Note that we need to have the video.Snippet.CategoryId set. That's the entire reason for the first request
+			video.Snippet.Title = title
+			video.Snippet.Tags = youtubeTags // for some reason the tags are not returned in the first request
+
+			updateCall := youtube.Videos.Update([]string{"id", "snippet"}, video)
+			_, err = updateCall.Do()
+			if err != nil {
+				return err
+			}
+			return nil
 		}
 	},
 }

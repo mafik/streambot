@@ -19,6 +19,35 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
+var youtubeTags = []string{
+	"Twitch",
+	"Game Making",
+	"Game Development",
+	"Game Programming",
+	"Game Art",
+	"Indie Game",
+	"Game Developer",
+	"Indie Developer",
+	"Chatting",
+	"Memes",
+	"English",
+	"GameDevelopmemt",
+	"Programming",
+	"ASMR",
+	"Coding",
+	"Cpp",
+	"C++",
+	"Design",
+	"CoWorking",
+	"OpenSource",
+	"LiveCoding",
+	"Live",
+	"LiveStream",
+	"Automat",
+	"Automation",
+	"Vulkan",
+}
+
 var youtubeTokenPath = filepath.Join(baseDir, "secrets", "youtube_token.json")
 
 func clearYouTubeToken() {
