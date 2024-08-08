@@ -58,7 +58,9 @@ html {
 }
 
 button,
-input {
+input,
+.button {
+  text-decoration: none;
   font-size: inherit;
   border-radius: .3em;
   padding: 0 .2em;
@@ -66,7 +68,8 @@ input {
   text-shadow: none;
 }
 
-button {
+button,
+.button {
   font-family: "Audiowide";
   cursor: pointer;
   background: linear-gradient(180deg, #4c4c4c, #333);
@@ -75,7 +78,8 @@ button {
   box-shadow: 0 .1em .2em rgba(0, 0, 0, 0.5);
 }
 
-button:hover {
+button:hover,
+.button:hover {
   background: linear-gradient(180deg, #6c6c6c, #555);
 }
 
@@ -132,7 +136,6 @@ body {
   font: 44px "Belanosima";
   text-align: left;
   vertical-align: middle;
-  width: calc(100vw - 160px);
   height: 60px;
   background: white;
   -webkit-background-clip: text;
@@ -141,7 +144,7 @@ body {
 
 /* Duplicate audio text over */
 #audio-highlight {
-  position: absolute;
+  position: relative;
   left: -1px;
   top: -1px;
   background: -webkit-linear-gradient(#ffffbc, #e6bba5);

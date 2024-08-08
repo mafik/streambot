@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <style>
     html {
-      background: black;
+      background: #222;
     }
 
     body {
@@ -17,74 +17,136 @@
       flex-direction: column;
     }
 
+    #toolbar {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-content: start;
+      justify-content: space-between;
+    }
+
+    #toolbar>.iframe-wrapper {
+      flex-grow: 1;
+      min-height: 250px;
+    }
+
+    #toolbar>.iframe-wrapper>iframe {
+      border-width: 3px;
+      width: calc(150% - 6px);
+      height: calc(150% - 6px);
+      transform: scale(0.6666);
+      transform-origin: 0 0;
+      border-style: solid;
+      border-radius: 5px;
+      background: black;
+    }
+
+    .break {
+      flex-basis: 100%;
+      height: 0;
+    }
+
+    #top-bar {
+      display: flex;
+      flex-direction: row;
+      align-content: start;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    body>hr {
+      flex: 0 0 4px;
+      border: none;
+      background-color: red;
+      margin: 0;
+    }
+
     #audio {
       position: relative;
       left: auto;
       bottom: auto;
       display: block;
-      flex-basis: 60px;
       font-size: 55px;
-      background: #333;
       transform-origin: left;
       text-wrap: nowrap;
-      flex-grow: 0;
       z-index: inherit;
       overflow: visible;
       letter-spacing: -2px;
+      margin-left: .2em;
+      flex: 1 1 auto;
+      overflow: hidden;
     }
 
     #title {
-      background: #222;
-      flex-grow: 0;
+      flex-grow: 1;
       display: flex;
+      flex-wrap: wrap;
     }
 
     #title-input {
       flex-grow: 1;
     }
 
+    #notification-input {
+      flex-basis: 100%;
+    }
+
     #chat {
-      flex-basis: 0;
-      flex-grow: 1;
+      background: #111;
+      flex: 1 1 auto;
       overflow-x: hidden;
       overflow-y: scroll;
     }
 
     #ecg {
       border: none;
+      position: relative;
+      height: 70px;
+      flex: 0 0 auto;
     }
 
-    #alert-form {
-      position: fixed;
-      top: 2em;
-      left: 0;
-      width: 50vw;
-      background: rgba(255, 255, 255, 0.5);
-      display: flex;
-      justify-content: stretch;
-      align-items: stretch;
-      flex-direction: column;
-      z-index: 1;
-      padding: 5px;
-      border-radius: 5px;
-      display: none;
+    #tabs {
+      vertical-align: bottom;
+      align-self: flex-end;
+    }
+
+    .tab {
+      border-radius: .3em .3em 0 0;
+      margin-bottom: 0;
+      box-shadow: none;
+      border-bottom: none;
+      vertical-align: bottom;
+    }
+
+    .tab:not(.active) {
+      opacity: 0.6;
     }
   </style>
 </head>
 
 <body>
-  <div id="audio"><span id="audio-highlight">No song playing</span><span id="audio-shadow">No song playing</span><span id="audio-fill">No song playing</span></div>
-  <div id="alert-form">
-    <textarea id="alert-input" placeholder="Alert message"></textarea><button id="alert-submit" onclick="ws.send(JSON.stringify({ call: 'ShowAlert', args: [document.getElementById('alert-input').value] }));">Send</button>
-  </div>
-  <div id="title">
-    <input id="title-input" placeholder="Stream title">
-    <button id="title-submit" onclick="ws.send(JSON.stringify({ call: 'SetTitle', args: [document.getElementById('title-input').value] }));">Update</button>
-  </div>
   <div id="alert">
     <div id="alert-content"></div>
   </div>
-  <canvas id="ecg" width="200" height="70"></canvas>
+  <div id="toolbar">
+    <div id="top-bar">
+      <div id="audio"><span id="audio-highlight">No song playing</span><span id="audio-shadow">No song playing</span><span id="audio-fill">No song playing</span></div>
+      <canvas id="ecg" width="200" height="70"></canvas>
+    </div>
+    <div class="iframe-wrapper" style="min-height: 100px"><iframe style="border-color: red;" src="https://studio.youtube.com/video/7j3i8os1tT4/livestreaming/console?c=UCBPKTkmfqWCVnrEv8CBPrbg"></iframe></div>
+    <div class="iframe-wrapper" style="min-height: 100px"><iframe style="border-color: darkorchid" src="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/stream-health"></iframe></div>
+    <div class="iframe-wrapper"><iframe style="border-color: darkorchid" src="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/edit-stream-info"></iframe></div>
+    <div class="iframe-wrapper"><iframe style="border-color: darkorchid" src="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/activity-feed"></iframe></div>
+    <div class="break"></div>
+    <div id="title">
+      <input id="title-input" placeholder="Stream title">
+      <button id="title-submit" onclick="ws.send(JSON.stringify({ call: 'SetTitle', args: [document.getElementById('title-input').value] }));">Update</button>
+    </div>
+    <a class="button" href="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/edit-stream-info" target="_blank">⮚Twitch</a>
+    <a class="button" href="https://studio.youtube.com/channel/UCBPKTkmfqWCVnrEv8CBPrbg/livestreaming/dashboard?c=UCBPKTkmfqWCVnrEv8CBPrbg" target="_blank">⮚YouTube</a>
+    <div id="tabs"><button class="tab active" data-tab="chat">Chat</button></div>
+  </div>
+  <hr>
   <div id="chat">Connecting...</div>
   <script src="NoSleep.min.js"></script>
   <script src="anime.min.js"></script>
