@@ -28,7 +28,10 @@
   <div id="alert" data-time="1">
     <div id="alert-content"></div>
   </div>
-  <canvas id="ecg" width="200" height="70"></canvas>
+  <div id="ecg">
+    <div class="canvas-bg"><canvas id="ecg-Twitch" width="20" height="20"></canvas><img src="twitch.svg" style="height: 1em; vertical-align: middle; mix-blend-mode: normal;"></div>
+    <div class="canvas-bg"><canvas id="ecg-YouTube" width="20" height="20"></canvas><img src="youtube.svg" style="width: 1em; mix-blend-mode: normal;"></div>
+  </div>
   <div id="chat">Connecting...</div>
   <div id="audio"><span id="audio-highlight">No song playing</span><span id="audio-shadow">No song playing</span><span id="audio-fill">No song playing</span></div>
   <script src="NoSleep.min.js"></script>

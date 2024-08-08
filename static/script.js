@@ -31,24 +31,29 @@ function Pong(component) {
     ecg_pings[component].shift();
   }
 }
-let canvas = document.getElementById('ecg');
 function DrawECG(t) {
-  let W = 220;
-  canvas.width = W * Object.keys(ecg_pings).length;
-  canvas.height = 60;
-  let ctx = canvas.getContext('2d');
-  let now = Date.now();
-  // ctx.clearRect(0, 0, canvas.width, canvas.height);
-  let y = 50;
-  let X = 0;
-  ctx.strokeStyle = '#ffffff';
-  ctx.font = '40px Audiowide';
-  ctx.lineJoin = 'round';
-  ctx.miterLimit = 100;
   for (let component in ecg_pings) {
+    let canvas = document.getElementById('ecg-' + component);
+    if (!canvas) {
+      continue;
+    }
+    let W = canvas.clientWidth;
+    let H = canvas.clientHeight;
+    canvas.width = W;
+    canvas.height = H;
+    let ctx = canvas.getContext('2d');
+    let now = Date.now();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let y = H * 0.85;
+    let X = 0;
+    ctx.strokeStyle = '#ffffff';
+    ctx.font = '40px Audiowide';
+    ctx.lineJoin = 'round';
+    ctx.miterLimit = 100;
+
     let pings = ecg_pings[component];
     ctx.beginPath();
-    let h_good = y - 40;
+    let h_good = H * 0.15;
     let h_bad = y;
     let h = h_bad;
     let widthTime = 6000;
@@ -113,16 +118,6 @@ function DrawECG(t) {
     ctx.lineWidth = 2;
     ctx.strokeStyle = '#ffffff';
     ctx.stroke(line);
-    ctx.rect(0, 0, W, 60);
-    ctx.lineWidth = 4;
-    ctx.stroke();
-    ctx.globalCompositeOperation = 'luminosity';
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 4;
-    ctx.lineJoin = 'miter';
-    ctx.strokeText(component, 10, y - 7);
-    ctx.fillStyle = '#dddddd';
-    ctx.fillText(component, 10, y - 7);
     ctx.globalCompositeOperation = 'source-over';
     ctx.translate(W, 0);
     ctx.lineJoin = 'round';

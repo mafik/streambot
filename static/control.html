@@ -131,7 +131,6 @@
   <div id="toolbar">
     <div id="top-bar">
       <div id="audio"><span id="audio-highlight">No song playing</span><span id="audio-shadow">No song playing</span><span id="audio-fill">No song playing</span></div>
-      <canvas id="ecg" width="200" height="70"></canvas>
     </div>
     <div class="iframe-wrapper" style="min-height: 100px"><iframe style="border-color: red;" src="https://studio.youtube.com/video/7j3i8os1tT4/livestreaming/console?c=UCBPKTkmfqWCVnrEv8CBPrbg"></iframe></div>
     <div class="iframe-wrapper" style="min-height: 100px"><iframe style="border-color: darkorchid" src="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/stream-health"></iframe></div>
@@ -142,8 +141,8 @@
       <input id="title-input" placeholder="Stream title">
       <button id="title-submit" onclick="ws.send(JSON.stringify({ call: 'SetTitle', args: [document.getElementById('title-input').value] }));">Update</button>
     </div>
-    <a class="button" href="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/edit-stream-info" target="_blank">⮚Twitch</a>
-    <a class="button" href="https://studio.youtube.com/channel/UCBPKTkmfqWCVnrEv8CBPrbg/livestreaming/dashboard?c=UCBPKTkmfqWCVnrEv8CBPrbg" target="_blank">⮚YouTube</a>
+    <a class="button canvas-bg" href="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/edit-stream-info" target="_blank"><canvas id="ecg-Twitch" width="20" height="20"></canvas><img src="twitch.svg" style="height: 1em; vertical-align: middle;"></a>
+    <a class="button canvas-bg" href="https://studio.youtube.com/channel/UCBPKTkmfqWCVnrEv8CBPrbg/livestreaming/dashboard?c=UCBPKTkmfqWCVnrEv8CBPrbg" target="_blank"><canvas id="ecg-YouTube" width="20" height="20"></canvas><img src="youtube.svg" style="height: 1em; vertical-align: middle; margin-bottom: 6px"></a>
     <div id="tabs"><button class="tab active" data-tab="chat">Chat</button></div>
   </div>
   <hr>

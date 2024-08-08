@@ -281,10 +281,37 @@ body {
   position: fixed;
   top: 0;
   right: 0;
-  border: 2px solid #37cf32;
-  border-top: none;
-  border-right: none;
-  background: rgba(0, 48, 14, 0.512);
+  display: flex;
   z-index: 2;
-  backdrop-filter: blur(10px);
+  padding: 8px;
+  gap: 8px;
+}
+
+#ecg>* {
+  flex: 0 0 auto;
+  background: rgba(0, 22, 48, 0.512);
+  border: 3px solid #2082dd;
+  border-radius: 8px;
+  min-width: 100px;
+}
+
+.canvas-bg {
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.canvas-bg>*:not(canvas) {
+  margin: 0 .2em;
+  position: relative;
+  mix-blend-mode: hard-light;
+}
+
+.canvas-bg>canvas {
+  position: absolute;
+  backdrop-filter: blur(5px);
+  left: 0;
+  width: 100%;
+  vertical-align: middle;
+  height: 100%;
 }
