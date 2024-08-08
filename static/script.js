@@ -33,7 +33,7 @@ function Pong(component) {
 }
 let canvas = document.getElementById('ecg');
 function DrawECG(t) {
-  let W = 250;
+  let W = 220;
   canvas.width = W * Object.keys(ecg_pings).length;
   canvas.height = 60;
   let ctx = canvas.getContext('2d');
@@ -51,18 +51,27 @@ function DrawECG(t) {
     let h_good = y - 40;
     let h_bad = y;
     let h = h_bad;
-    if (pings.length > 0 && pings[0].type == 'pong') {
-      h = h_good;
+    let widthTime = 6000;
+    for (let i = 0; i < pings.length; ++i) {
+      let entry = pings[i];
+      let x = (now - entry.time) / widthTime * W;
+      if (x <= W) {
+        break;
+      }
+      if (entry.type == 'ping') {
+        h = h_bad;
+      } else if (entry.type == 'pong') {
+        h = h_good;
+      }
     }
     let line = new Path2D();
     line.moveTo(W, h);
-    let widthTime = 10000;
     for (let i = 0; i < pings.length; ++i) {
       let entry = pings[i];
       let time = entry.time;
       let x = (now - time) / widthTime * W;
-      if (x >= W) {
-        x = W;
+      if (x > W) {
+        continue;
       }
       if (entry.type == 'ping') {
         line.lineTo(x, h);
@@ -104,6 +113,9 @@ function DrawECG(t) {
     ctx.lineWidth = 2;
     ctx.strokeStyle = '#ffffff';
     ctx.stroke(line);
+    ctx.rect(0, 0, W, 60);
+    ctx.lineWidth = 4;
+    ctx.stroke();
     ctx.globalCompositeOperation = 'luminosity';
     ctx.strokeStyle = '#333';
     ctx.lineWidth = 4;
