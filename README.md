@@ -44,7 +44,7 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
   - Sound played when alert starts and ends
   - ***TODO**: YouTube subscriptions*
   - ***TODO**: GitHub sponsors*
-- ***TODO**: OBS scene transition when moving the cursor to a different screen (for drawing in Krita)*
+- OBS scene transition when moving the cursor to a different screen (using [Barrier's](https://github.com/debauchee/barrier) log)
 - ***TODO**: Ability for users to change their voice*
 - ***TODO**: Animated avatars for stream viewers*
 

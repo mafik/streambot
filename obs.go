@@ -12,6 +12,7 @@ import (
 	"github.com/andreykaipov/goobs"
 	"github.com/andreykaipov/goobs/api/events"
 	"github.com/andreykaipov/goobs/api/events/subscriptions"
+	"github.com/andreykaipov/goobs/api/requests/scenes"
 	"github.com/fatih/color"
 	"github.com/mitchellh/go-ps"
 )
@@ -19,6 +20,19 @@ import (
 var OBSChannel = make(chan any)
 
 var MicIsSilent atomic.Bool
+var OBSScene atomic.Value
+
+func OBSSwitchScene(targetScene string) error {
+	errChan := make(chan error)
+	OBSChannel <- func(obs *goobs.Client) error {
+		_, err := obs.Scenes.SetCurrentProgramScene(&scenes.SetCurrentProgramSceneParams{
+			SceneName: &targetScene,
+		})
+		errChan <- err
+		return err
+	}
+	return <-errChan
+}
 
 func OBS() {
 
@@ -72,12 +86,20 @@ func OBS() {
 		obs, err := goobs.New("localhost:4455",
 			goobs.WithPassword(obsPassword),
 			goobs.WithRequestHeader(http.Header{"User-Agent": []string{"streambot/1.0"}}),
-			goobs.WithEventSubscriptions(subscriptions.InputVolumeMeters),
+			goobs.WithEventSubscriptions(subscriptions.InputVolumeMeters|subscriptions.Scenes),
 		)
 		if err != nil {
 			col.Println("Couldn't connect to OBS:", err)
 			continue
 		}
+
+		sceneResp, err := obs.Scenes.GetCurrentProgramScene()
+		if err != nil {
+			col.Println("Couldn't get current scene:", err)
+			continue
+		}
+		col.Println("Initial scene:", sceneResp.CurrentProgramSceneName)
+		OBSScene.Store(&sceneResp.CurrentProgramSceneName)
 
 		backoff.Success()
 
@@ -116,8 +138,11 @@ func OBS() {
 							MicIsSilent.Store(true)
 						}
 					}
+				case *events.CurrentProgramSceneChanged:
+					col.Println("Scene changed to", t.SceneName)
+					OBSScene.Store(&t.SceneName)
 				default:
-					col.Println("Unknown OBS event:", t)
+					col.Printf("Unknown OBS event: %#v\n", t)
 				}
 			}
 		}

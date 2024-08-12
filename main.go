@@ -146,6 +146,7 @@ func main() {
 	lastAudioMessage := ""
 	audioMessages := make(chan string)
 	go VlcMonitor(audioMessages)
+	go BarrierMonitor()
 
 	go TTS()
 
