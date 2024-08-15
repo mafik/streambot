@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"html"
 	"streambot/backoff"
 
 	"github.com/gorilla/websocket"
@@ -65,6 +66,67 @@ type TwitchRaidNotification struct {
 	} `json:"payload"`
 }
 
+// https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelchatmessage
+type TwitchChatMessageNotification struct {
+	Payload struct {
+		Event struct {
+			BroadcasterUserID    string `json:"broadcaster_user_id"`
+			BroadcasterUserName  string `json:"broadcaster_user_name"`
+			BroadcasterUserLogin string `json:"broadcaster_user_login"`
+			ChatterUserID        string `json:"chatter_user_id"`
+			ChatterUserName      string `json:"chatter_user_name"`
+			ChatterUserLogin     string `json:"chatter_user_login"`
+			MessageID            string `json:"message_id"`
+			Message              struct {
+				Text      string `json:"text"`
+				Fragments []struct {
+					Type      string `json:"type"`
+					Text      string `json:"text"`
+					Cheermote *struct {
+						Prefix string `json:"prefix"`
+						Bits   int    `json:"bits"`
+						Tier   int    `json:"tier"`
+					} `json:"cheermote,omitempty"`
+					Emote *struct {
+						ID         string `json:"id"`
+						EmoteSetID string `json:"emote_set_id"`
+						OwnerID    string `json:"owner_id"`
+						Format     []string
+					} `json:"emote,omitempty"`
+					Mention *struct {
+						UserID    string `json:"user_id"`
+						UserName  string `json:"user_name"`
+						UserLogin string `json:"user_login"`
+					} `json:"mention,omitempty"`
+				} `json:"fragments"`
+			} `json:"message"`
+			MessageType string `json:"message_type,omitempty"`
+			Badges      []struct {
+				SetID string `json:"set_id"`
+				ID    string `json:"id"`
+				Info  string `json:"info,omitempty"`
+			} `json:"badges,omitempty"`
+			Cheer *struct {
+				Bits int `json:"bits"`
+			} `json:"cheer,omitempty"`
+			Color string `json:"color,omitempty"`
+			Reply *struct {
+				ParentMessageID   string `json:"parent_message_id"`
+				ParentMessageBody string `json:"parent_message_body"`
+				ParentUserID      string `json:"parent_user_id"`
+				ParentUserName    string `json:"parent_user_name"`
+				ParentUserLogin   string `json:"parent_user_login"`
+				ThreadMessageID   string `json:"thread_message_id"`
+				ThreadUserID      string `json:"thread_user_id"`
+				ThreadUserName    string `json:"thread_user_name"`
+				ThreadUserLogin   string `json:"thread_user_login"`
+			} `json:"reply,omitempty"`
+			ChannelPointsCustomRewardID string `json:"channel_points_custom_reward_id,omitempty"`
+			ChanelPointsAnimationID     string `json:"channel_points_animation_id,omitempty"`
+		} `json:"event"`
+	} `json:"payload"`
+}
+
 func TwitchEventSub() {
 	backoff := backoff.Backoff{
 		Color:       twitchColor,
@@ -72,6 +134,7 @@ func TwitchEventSub() {
 	}
 	for {
 		backoff.Attempt()
+		Webserver.Call("Ping", "Twitch")
 		c, _, err := websocket.DefaultDialer.Dial("wss://eventsub.wss.twitch.tv/ws", nil)
 		if err != nil {
 			twitchColor.Println("dial:", err)
@@ -104,6 +167,7 @@ func TwitchEventSub() {
 						twitchColor.Println("Twitch EventSub configure ERROR:", err)
 						return
 					}
+					Webserver.Call("Pong", "Twitch")
 				case "notification":
 					var generic_notification TwitchNotification
 					err = json.Unmarshal(bytes, &generic_notification)
@@ -150,17 +214,103 @@ func TwitchEventSub() {
 								}
 							},
 						}
+					case "channel.chat.message":
+						var chat_message_notification TwitchChatMessageNotification
+						err = json.Unmarshal(bytes, &chat_message_notification)
+						if err != nil {
+							twitchColor.Println("Twitch EventSub cannot unmarshal chat message:", err, string(bytes))
+							return
+						}
+						event := chat_message_notification.Payload.Event
+						bytes, _ := json.Marshal(event)
+
+						str_msg := string(bytes)
+						twitchColor.Println(str_msg)
+
+						entry := ChatEntry{
+							Author: UserVariant{
+								TwitchUser: &TwitchUser{
+									TwitchID: event.ChatterUserID,
+									Name:     event.ChatterUserName,
+									Color:    event.Color,
+									Login:    event.ChatterUserLogin,
+								},
+							},
+							OriginalMessage: event.Message.Text,
+						}
+
+						entry.terminalMsg = fmt.Sprintf("  %s: ", entry.Author.DisplayName())
+						entry.HTML = fmt.Sprintf(TWITCH_ICON+` %s: `, entry.Author.HTML())
+						entry.ttsMsg = ""
+
+						for _, fragment := range event.Message.Fragments {
+							switch fragment.Type {
+							case "text":
+								entry.terminalMsg += fragment.Text
+								entry.HTML += html.EscapeString(fragment.Text)
+								entry.ttsMsg += fragment.Text
+							case "cheermote":
+								entry.terminalMsg += fmt.Sprintf("CHEER(prefix=%s, bits=%d tier=%d)", fragment.Cheermote.Prefix, fragment.Cheermote.Bits, fragment.Cheermote.Tier)
+								entry.HTML += fmt.Sprintf("TODO: support cheermotes (prefix=%s, bits=%d tier=%d)", fragment.Cheermote.Prefix, fragment.Cheermote.Bits, fragment.Cheermote.Tier)
+								entry.ttsMsg += fmt.Sprintf("* Cheered %d bits *", fragment.Cheermote.Bits)
+							case "emote":
+								entry.terminalMsg += fmt.Sprintf("[%s]", fragment.Text)
+								entry.HTML += fmt.Sprintf("<img title=\"%s\" class=\"emoji\" src=\"https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0\" srcset=\"https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0 1x,https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/2.0 2x,https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/3.0 4x\">", fragment.Text, fragment.Emote.ID, fragment.Emote.ID, fragment.Emote.ID, fragment.Emote.ID)
+							case "mention":
+								mention := UserVariant{
+									TwitchUser: &TwitchUser{
+										TwitchID: fragment.Mention.UserID,
+										Login:    fragment.Mention.UserLogin,
+										Name:     fragment.Mention.UserName,
+									},
+								}
+								entry.terminalMsg += fragment.Text
+								entry.HTML += "@" + mention.HTML()
+								entry.ttsMsg += mention.DisplayName()
+							}
+						}
+						entry.terminalMsg += "\n"
+
+						// Keeping the string-replacement code for the eventual possibility that custom (non-Twitch) emotes will be added
+						/*
+							i := 0
+							for i < len(entry.HTML) {
+								replaced := false
+								if i == 0 || entry.HTML[i-1] == ' ' {
+									for emote, url := range *emotes {
+										if i+len(emote) >= len(entry.HTML)-1 || entry.HTML[i+len(emote)] == ' ' {
+											if strings.HasPrefix(entry.HTML[i:], emote) {
+												tag := `<img src="` + url + `" class="emoji" />`
+												entry.HTML = entry.HTML[:i] + tag + entry.HTML[i+len(emote):]
+												i += len(tag)
+												replaced = true
+												break
+											}
+										}
+									}
+								}
+								if !replaced {
+									i++
+								}
+							}
+						*/
+
+						MainChannel <- entry
+
 					default:
 						twitchColor.Println("Twitch EventSub unknown notification type:", generic_notification.Payload.Subscription.Type)
 					}
 
 				case "session_keepalive":
+					Webserver.Call("Ping", "Twitch")
+					Webserver.Call("Pong", "Twitch")
 					// nothing to do
 				default:
 					twitchColor.Println("Twitch EventSub unknown message: ", string(bytes))
 				}
 			}
 		}()
+		Webserver.Call("Ping", "Twitch")
 	}
 }
 
@@ -200,7 +350,7 @@ func TwitchEventSubscribe(client *helix.Client, sessionID, subscriptionType, ver
 		return err
 	}
 	if followSub.Error != "" {
-		return fmt.Errorf("Twitch event subscription for %s:%s failed %s", subscriptionType, version, followSub.ErrorMessage)
+		return fmt.Errorf("twitch event subscription for %s:%s failed %s", subscriptionType, version, followSub.ErrorMessage)
 	}
 	return nil
 }
@@ -208,21 +358,38 @@ func TwitchEventSubscribe(client *helix.Client, sessionID, subscriptionType, ver
 func TwitchEventsSubscribeKnown(sessionID string) error {
 	errChan := make(chan error)
 	TwitchHelixChannel <- func(client *helix.Client) {
-
-		err := TwitchEventSubscribe(client, sessionID, "channel.follow", "2", helix.EventSubCondition{
-			BroadcasterUserID: twitchBroadcasterID,
-			ModeratorUserID:   twitchBotID,
-		})
-		if err != nil {
-			errChan <- err
-			return
+		type Sub struct {
+			Type      string
+			Version   string
+			Condition helix.EventSubCondition
 		}
-		err = TwitchEventSubscribe(client, sessionID, "channel.raid", "1", helix.EventSubCondition{
-			ToBroadcasterUserID: twitchBroadcasterID,
-		})
-		if err != nil {
-			errChan <- err
-			return
+
+		subs := []Sub{
+			{"channel.follow", "2",
+				helix.EventSubCondition{
+					BroadcasterUserID: twitchBroadcasterID,
+					ModeratorUserID:   twitchBotID,
+				},
+			},
+			{"channel.raid", "1",
+				helix.EventSubCondition{
+					ToBroadcasterUserID: twitchBroadcasterID,
+				},
+			},
+			{"channel.chat.message", "1",
+				helix.EventSubCondition{
+					BroadcasterUserID: twitchBroadcasterID,
+					UserID:            twitchBotID,
+					ModeratorUserID:   twitchBotID,
+				},
+			},
+		}
+		for _, sub := range subs {
+			err := TwitchEventSubscribe(client, sessionID, sub.Type, sub.Version, sub.Condition)
+			if err != nil {
+				errChan <- err
+				return
+			}
 		}
 		errChan <- nil
 	}
