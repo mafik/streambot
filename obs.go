@@ -22,6 +22,17 @@ var OBSChannel = make(chan any)
 var MicIsSilent atomic.Bool
 var OBSScene atomic.Value
 
+func GetOBSScene() string {
+	x := OBSScene.Load()
+	if x == nil {
+		return ""
+	}
+	if s, ok := x.(*string); ok {
+		return *s
+	}
+	return ""
+}
+
 func OBSSwitchScene(targetScene string) error {
 	errChan := make(chan error)
 	OBSChannel <- func(obs *goobs.Client) error {

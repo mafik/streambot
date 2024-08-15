@@ -52,7 +52,7 @@ func BarrierMonitor() {
 					// 1. Find the monitor config for this screen
 					// 2. Check the current scene in OBS and checck if its one of the scenes in the monitor
 					// 3. I
-					var obsScene = *OBSScene.Load().(*string)
+					var obsScene = GetOBSScene()
 					obsSceneSwitchable := false
 					mouseScreenSwitchable := false
 					var targetScene *string = nil
