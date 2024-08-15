@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html"
 	"net"
 	"net/http"
 	"path"
@@ -18,6 +19,13 @@ var refreshTokenPath = path.Join(baseDir, "secrets", "twitch_refresh_token.txt")
 var twitchColor = color.New(color.FgMagenta)
 var twitchAuthUrl string
 var twitchWebhookSecret string
+
+const twitchBotUsername = "maf_pl"
+const twitchBroadcasterUsername = "maf_pl"
+const TWITCH_ICON = `<img src="twitch.svg" class="emoji">`
+
+var twitchBotID string
+var twitchBroadcasterID string
 
 func OnUserAccessTokenRefreshed(newAccessToken, newRefreshToken string) {
 	twitchColor.Println("User access token refreshed! If this spams the console, visit this URL using bot account to authorize it:", twitchAuthUrl)
@@ -55,6 +63,44 @@ func OnTwitchAuth(w http.ResponseWriter, r *http.Request) {
 		client.SetRefreshToken(resp.Data.RefreshToken)
 		OnUserAccessTokenRefreshed(resp.Data.AccessToken, resp.Data.RefreshToken)
 	}
+}
+
+var twitchEmotes map[string]string
+
+func getTwitchEmotes() *map[string]string {
+	if twitchEmotes == nil {
+		emotesChannel := make(chan map[string]string)
+		TwitchHelixChannel <- func(client *helix.Client) {
+			resp, err := client.GetGlobalEmotes()
+			emotes := make(map[string]string)
+			if err == nil {
+				for _, emote := range resp.Data.Emotes {
+					emotes[emote.Name] = emote.Images.Url4x
+				}
+			}
+			users, err := client.GetUsers(&helix.UsersParams{Logins: []string{twitchBroadcasterUsername}})
+			if err == nil {
+				id := users.Data.Users[0].ID
+				resp, err = client.GetChannelEmotes(&helix.GetChannelEmotesParams{BroadcasterID: id})
+				if err == nil {
+					for _, emote := range resp.Data.Emotes {
+						emotes[emote.Name] = emote.Images.Url4x
+					}
+				}
+			} else {
+				fmt.Println("Couldn't get Twitch user ID:", err)
+			}
+			emotesChannel <- emotes
+		}
+		twitchEmotes = <-emotesChannel
+		for emote, url := range twitchEmotes {
+			escapedEmote := html.EscapeString(emote)
+			if escapedEmote != emote {
+				twitchEmotes[escapedEmote] = url
+			}
+		}
+	}
+	return &twitchEmotes
 }
 
 func Ban(args ...json.RawMessage) {
@@ -154,7 +200,7 @@ func TwitchHelixBot() {
 		client.OnUserAccessTokenRefreshed(OnUserAccessTokenRefreshed)
 		twitchAuthUrl = client.GetAuthorizationURL(&helix.AuthorizationURLParams{
 			ResponseType: "code",
-			Scopes:       []string{"channel:manage:broadcast", "moderator:manage:banned_users", "moderator:read:followers"},
+			Scopes:       []string{"channel:manage:broadcast", "moderator:manage:banned_users", "moderator:read:followers", "user:read:chat", "channel:bot"},
 		})
 		WriteStringToFile(path.Join(baseDir, "twitch_auth_url.txt"), twitchAuthUrl)
 		getUsersResp, err := client.GetUsers(&helix.UsersParams{Logins: []string{twitchBroadcasterUsername, twitchBotUsername}})

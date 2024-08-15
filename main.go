@@ -136,7 +136,6 @@ func main() {
 	go ObsGaze("Main", "Gaze")
 
 	go TwitchHelixBot()
-	go TwitchIRCBot()
 	go TwitchEventSub()
 
 	go YouTubeBot()
