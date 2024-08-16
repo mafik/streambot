@@ -311,7 +311,10 @@ function OnMessage(event) {
 }
 function SetStreamTitle(title) {
   document.title = title;
-  document.getElementById('title-input').value = title;
+  let titleElement = document.getElementById('title');
+  if (titleElement) {
+    titleElement.value = title;
+  }
 }
 var ws;
 function Connect() {
@@ -330,6 +333,3 @@ function OnClose() {
   setTimeout(Connect, 1000);
 }
 Connect();
-
-var noSleep = new NoSleep();
-noSleep.enable();

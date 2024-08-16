@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Chat</title>
+  <title>Control</title>
   <link rel="stylesheet" href="style.css">
   <style>
     html {
@@ -15,50 +15,6 @@
       width: 100vw;
       height: 100vh;
       flex-direction: column;
-    }
-
-    #toolbar {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      align-content: start;
-      justify-content: space-between;
-    }
-
-    #toolbar>.iframe-wrapper {
-      flex-grow: 1;
-      min-height: 250px;
-    }
-
-    #toolbar>.iframe-wrapper>iframe {
-      border-width: 3px;
-      width: calc(150% - 6px);
-      height: calc(150% - 6px);
-      transform: scale(0.6666);
-      transform-origin: 0 0;
-      border-style: solid;
-      border-radius: 5px;
-      background: black;
-    }
-
-    .break {
-      flex-basis: 100%;
-      height: 0;
-    }
-
-    #top-bar {
-      display: flex;
-      flex-direction: row;
-      align-content: start;
-      justify-content: space-between;
-      width: 100%;
-    }
-
-    body>hr {
-      flex: 0 0 4px;
-      border: none;
-      background-color: red;
-      margin: 0;
     }
 
     #audio {
@@ -77,20 +33,6 @@
       overflow: hidden;
     }
 
-    #title {
-      flex-grow: 1;
-      display: flex;
-      flex-wrap: wrap;
-    }
-
-    #title-input {
-      flex-grow: 1;
-    }
-
-    #notification-input {
-      flex-basis: 100%;
-    }
-
     #chat {
       background: #111;
       flex: 1 1 auto;
@@ -103,23 +45,6 @@
       position: relative;
       height: 70px;
       flex: 0 0 auto;
-    }
-
-    #tabs {
-      vertical-align: bottom;
-      align-self: flex-end;
-    }
-
-    .tab {
-      border-radius: .3em .3em 0 0;
-      margin-bottom: 0;
-      box-shadow: none;
-      border-bottom: none;
-      vertical-align: bottom;
-    }
-
-    .tab:not(.active) {
-      opacity: 0.6;
     }
   </style>
 </head>
@@ -148,6 +73,10 @@
   <hr>
   <div id="chat">Connecting...</div>
   <script src="NoSleep.min.js"></script>
+  <script>
+    var noSleep = new NoSleep();
+    noSleep.enable();
+  </script>
   <script src="anime.min.js"></script>
   <script src="script.js"></script>
 </body>

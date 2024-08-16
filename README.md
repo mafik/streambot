@@ -37,6 +37,12 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
   - ***TODO**: button for banning users on YT*
   - ***TODO**: counters with counts of viewers on YT and Twitch*
   - ***TODO**: auto-ban regexps*
+- Viewer panel available by opening `chat.html`
+  - Current music track indicator
+  - Links to Twitch and YouTube
+  - Chat view
+  - ***TODO**: Custom voices for viewers*
+  - ***TODO**: Animated avatars for viewers*
 - ***TODO**: automatic streaming notifications on Twitter and Mastodon*
 - On-stream alerts
   - Twitch follows & raids
@@ -45,8 +51,6 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
   - ***TODO**: YouTube subscriptions*
   - ***TODO**: GitHub sponsors*
 - OBS scene transition when moving the cursor to a different screen (using [Barrier's](https://github.com/debauchee/barrier) log)
-- ***TODO**: Ability for users to change their voice*
-- ***TODO**: Animated avatars for stream viewers*
 
 ## Warnings
 

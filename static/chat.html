@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Belanosima:wght@400;600;700&family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    html {
+      background: #222;
+    }
+
+    body {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    #audio {
+      position: relative;
+      left: auto;
+      bottom: auto;
+      display: block;
+      font-size: 55px;
+      transform-origin: left;
+      text-wrap: nowrap;
+      z-index: inherit;
+      overflow: visible;
+      margin-left: .2em;
+      flex: 0 1 auto;
+      overflow: hidden;
+    }
+
+    #title {
+      flex-grow: 1;
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    #title-input {
+      flex-grow: 1;
+    }
+
+    #notification-input {
+      flex-basis: 100%;
+    }
+
+    #chat {
+      background: #111;
+      flex: 1 1 auto;
+      overflow-x: hidden;
+      overflow-y: scroll;
+    }
+
+    #ecg {
+      border: none;
+      position: relative;
+      height: 70px;
+      flex: 0 0 auto;
+    }
+
+    #tabs {
+      vertical-align: bottom;
+      align-self: flex-end;
+    }
+
+    .tab {
+      border-radius: .3em .3em 0 0;
+      margin-bottom: 0;
+      box-shadow: none;
+      border-bottom: none;
+      vertical-align: bottom;
+    }
+
+    .tab:not(.active) {
+      opacity: 0.6;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="alert">
+    <div id="alert-content"></div>
+  </div>
+  <div id="toolbar">
+    <div id="audio"><span id="audio-highlight">No song playing</span><span id="audio-shadow">No song playing</span><span id="audio-fill">No song playing</span></div>
+    <div class="break"></div>
+    <a class="button canvas-bg" href="https://twitch.tv/maf_pl" target="_blank"><canvas id="ecg-Twitch" width="20" height="20"></canvas><img src="twitch.svg" style="height: 1em; vertical-align: middle;"></a>
+    <a class="button canvas-bg" href="https://www.youtube.com/@MarekRogalski/streams" target="_blank"><canvas id="ecg-YouTube" width="20" height="20"></canvas><img src="youtube.svg" style="height: 1em; vertical-align: middle; margin-bottom: 6px"></a>
+    <div class="expand"></div>
+    <div id="tabs"><button class="tab active" data-tab="chat">Chat</button></div>
+  </div>
+  <hr>
+  <div id="chat">Connecting...</div>
+  <script src="anime.min.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>

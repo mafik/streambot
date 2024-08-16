@@ -290,6 +290,12 @@ func StartWebserver(OnNewClient chan *WebsocketClient) *WebsocketHub {
 		http.DefaultServeMux.ServeHTTP(w, r)
 	})))
 
+	http.HandleFunc("/{$}", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "static/chat.html")
+	})
+
+	http.Handle("/", http.FileServer(http.Dir("./static")))
+
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
