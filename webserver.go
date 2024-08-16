@@ -40,9 +40,10 @@ type WebsocketHub struct {
 }
 
 type WebsocketClient struct {
-	hub  *WebsocketHub
-	conn *websocket.Conn
-	send chan []byte
+	hub   *WebsocketHub
+	conn  *websocket.Conn
+	send  chan []byte
+	admin bool
 }
 
 type callRequest struct {
@@ -216,7 +217,7 @@ func (c *WebsocketClient) readPump() {
 			fmt.Println(err)
 			continue
 		}
-		if IsAuthorized(c.conn.RemoteAddr().String()) {
+		if c.admin {
 			if handler, ok := JavaScriptHandlers[message.Call]; ok {
 				handler(message.Args...)
 			} else {
@@ -284,6 +285,11 @@ func StartWebserver(OnNewClient chan *WebsocketClient) *WebsocketHub {
 	http.HandleFunc("/twitch-auth", OnTwitchAuth)
 	http.HandleFunc("/webhook/twitch", OnTwitchWebhook)
 
+	// Turn /live/ into alias for /
+	http.Handle("/live/", http.StripPrefix("/live", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.DefaultServeMux.ServeHTTP(w, r)
+	})))
+
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -291,6 +297,22 @@ func StartWebserver(OnNewClient chan *WebsocketClient) *WebsocketHub {
 			return
 		}
 		client := &WebsocketClient{hub: hub, conn: conn, send: make(chan []byte, 256)}
+
+		forwarded_headers := r.Header["X-Forwarded-For"]
+		switch len(forwarded_headers) {
+		case 0:
+			// direct connection - local network
+			client.admin = IsAuthorized(conn.RemoteAddr().String())
+		case 1:
+			// nginx proxy
+			fmt.Println("Nginx connection from", forwarded_headers[0])
+			client.admin = IsAuthorized(forwarded_headers[0])
+		default:
+			fmt.Println("Hack attempt from", forwarded_headers[len(forwarded_headers)-1], "(multiple X-Forwarded-For headers)")
+			// TODO: ban this IP
+			client.admin = false
+		}
+
 		client.hub.register <- client
 
 		// Allow collection of memory referenced by the caller by doing all work in

@@ -315,11 +315,9 @@ function SetStreamTitle(title) {
 }
 var ws;
 function Connect() {
-  if (location.host == "" || location.host == "absolute") {
-    ws = new WebSocket('ws://localhost:3447/ws');
-  } else {
-    ws = new WebSocket('ws://' + location.host + '/ws');
-  }
+  let protocol = location.protocol == 'https:' ? 'wss:' : 'ws:';
+  let domain = (location.host == "" || location.host == "absolute") ? 'localhost:3447' : location.host;
+  ws = new WebSocket(protocol + '//' + domain + '/live/ws');
   ws.onopen = OnOpen;
   ws.onmessage = OnMessage;
   ws.onclose = OnClose;
