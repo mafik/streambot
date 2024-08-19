@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
 	"regexp"
 	"streambot/backoff"
@@ -120,6 +121,21 @@ func SynthesizeAllTalk(r *http.Request) ([]byte, error) {
 	return wav, nil
 }
 
+const voiceSampleText = `The turtle was slow and steady.
+He took his time, step by step.
+He wasn't fast like the hare,
+But he had something special yet.
+
+The hare ran quickly, without care,
+Leaping over logs with ease.
+The turtle, though slow, never spared
+His strength, even when faced with teas-ing breeze-es.
+
+The race was close; the finish line near,
+But the hare grew tired and stopped to rest.
+The turtle kept moving, without fear,
+And won the race, proving that steadfastness is best.`
+
 func InitVoices() error {
 	voicesReq := ttsApiRequest("voices", nil, http.MethodGet)
 	client := &http.Client{}
@@ -141,20 +157,25 @@ func InitVoices() error {
 		return fmt.Errorf("couldn't create voices directory: %w", err)
 	}
 	for _, voice := range voicesResponse.Voices {
-		samplePath := path.Join(voicesDir, voice)
+		wavPath := path.Join(voicesDir, voice)
+		mp3Path := wavPath + ".mp3"
 		// generate if not exists
-		_, err := os.Stat(samplePath)
+		_, err := os.Stat(mp3Path)
 		if os.IsNotExist(err) {
 			fmt.Println("Generating sample for voice:", voice)
-			voiceWithoutExtension := strings.TrimSuffix(voice, ".wav")
-			sampleReq := ttsGenerateRequest("This is a voice sample in the style of "+voiceWithoutExtension, voice, narratorVoiceCfg)
+			sampleReq := ttsGenerateRequest(voiceSampleText, voice, narratorVoiceCfg)
 			wav, err := SynthesizeAllTalk(sampleReq)
 			if err != nil {
 				return fmt.Errorf("couldn't generate voice sample for %s: %w", voice, err)
 			}
-			err = os.WriteFile(samplePath, wav, 0644)
+			err = os.WriteFile(wavPath, wav, 0644)
 			if err != nil {
 				return fmt.Errorf("couldn't save voice sample for %s: %w", voice, err)
+			}
+			cmd := exec.Command("C:\\ffmpeg", "-i", wavPath, "-vn", "-ar", "22050", "-ac", "1", "-b:a", "128k", mp3Path)
+			err = cmd.Run()
+			if err != nil {
+				return fmt.Errorf("couldn't convert voice sample to mp3: %w", err)
 			}
 		}
 	}

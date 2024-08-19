@@ -48,7 +48,7 @@ function LoadVoices() {
 function ListVoicesResponse(voices) {
   let html = '';
   for (let i in voices) {
-    html += '<audio loop id="voice-' + i + '" src="voices/' + voices[i] + '"></audio>';
+    html += '<audio loop id="voice-' + i + '" src="voices/' + voices[i] + '.mp3"></audio>';
   }
   for (let i in voices) {
     let voice = voices[i];
