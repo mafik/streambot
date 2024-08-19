@@ -85,9 +85,11 @@ func MainOnChatEntry(t ChatEntry) {
 		}
 		if t.Author.TwitchUser != nil {
 			user.TwitchUser = t.Author.TwitchUser
+			TwitchIndex[user.TwitchUser.Key()] = user
 		}
 		if t.Author.YouTubeUser != nil {
 			user.YouTubeUser = t.Author.YouTubeUser
+			YouTubeIndex[user.YouTubeUser.Key()] = user
 		}
 		user.IssueTicket() // invalidate the old ticket
 		for _, client := range user.websockets {

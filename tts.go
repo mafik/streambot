@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"path"
 	"regexp"
 	"streambot/backoff"
 	"strings"
@@ -16,6 +18,7 @@ import (
 
 const allTalkUrl = "http://10.0.0.8:7851"
 const narratorVoiceCfg = "bg3_narrator.wav"
+const defaultVoiceCfg = "SMOrc.wav"
 
 type GenerateResponse struct {
 	Status         string `json:"status"`
@@ -24,12 +27,17 @@ type GenerateResponse struct {
 	OutputCacheUrl string `json:"output_cache_url"`
 }
 
-func ttsApiRequest(method string, params map[string]string) *http.Request {
+type VoicesResponse struct {
+	Status string   `json:"status"`
+	Voices []string `json:"voices"`
+}
+
+func ttsApiRequest(method string, params map[string]string, httpMethod string) *http.Request {
 	data := url.Values{}
 	for key, value := range params {
 		data.Set(key, value)
 	}
-	r, _ := http.NewRequest(http.MethodPost, fmt.Sprintf(allTalkUrl+"/api/%s", method), strings.NewReader(data.Encode()))
+	r, _ := http.NewRequest(httpMethod, fmt.Sprintf(allTalkUrl+"/api/%s", method), strings.NewReader(data.Encode()))
 	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	return r
 }
@@ -51,11 +59,11 @@ func ttsGenerateRequest(text, characterVoice, narratorVoiceArg string) *http.Req
 		params["narrator_voice_gen"] = narratorVoiceArg
 		params["text_not_inside"] = "character"
 	}
-	return ttsApiRequest("tts-generate", params)
+	return ttsApiRequest("tts-generate", params, http.MethodPost)
 }
 
 func helloWorldRequest() *http.Request {
-	return ttsApiRequest("ready", nil)
+	return ttsApiRequest("ready", nil, http.MethodPost)
 }
 
 var ttsColor = color.New(color.FgBlue)
@@ -65,6 +73,7 @@ var TTSChannel = make(chan interface{}, 10)
 var htmlTagRegexp = regexp.MustCompile(`<[^>]*>`)
 var urlRegexp = regexp.MustCompile(`(https?://[^\s]+)`)
 var acronyms = []string{"url", "gpt", "tts", "dns", "http", "ftp"}
+var voices []string
 
 func Download(url string) ([]byte, error) {
 	resp, err := http.Get(url)
@@ -109,6 +118,48 @@ func SynthesizeAllTalk(r *http.Request) ([]byte, error) {
 		return nil, fmt.Errorf("couldn't download TTS result: %w", err)
 	}
 	return wav, nil
+}
+
+func InitVoices() error {
+	voicesReq := ttsApiRequest("voices", nil, http.MethodGet)
+	client := &http.Client{}
+	voicesResp, err := client.Do(voicesReq)
+	if err != nil {
+		return fmt.Errorf("couldn't get voices from AllTalk: %w", err)
+	}
+	body, err := io.ReadAll(voicesResp.Body)
+	if err != nil {
+		return fmt.Errorf("couldn't read voices response: %w", err)
+	}
+	var voicesResponse VoicesResponse
+	if err := json.Unmarshal(body, &voicesResponse); err != nil {
+		return fmt.Errorf("couldn't decode voices response: %w", err)
+	}
+	voicesDir := path.Join(baseDir, "static", "voices")
+	err = os.MkdirAll(voicesDir, 0755)
+	if err != nil {
+		return fmt.Errorf("couldn't create voices directory: %w", err)
+	}
+	for _, voice := range voicesResponse.Voices {
+		samplePath := path.Join(voicesDir, voice)
+		// generate if not exists
+		_, err := os.Stat(samplePath)
+		if os.IsNotExist(err) {
+			fmt.Println("Generating sample for voice:", voice)
+			voiceWithoutExtension := strings.TrimSuffix(voice, ".wav")
+			sampleReq := ttsGenerateRequest("This is a voice sample in the style of "+voiceWithoutExtension, voice, narratorVoiceCfg)
+			wav, err := SynthesizeAllTalk(sampleReq)
+			if err != nil {
+				return fmt.Errorf("couldn't generate voice sample for %s: %w", voice, err)
+			}
+			err = os.WriteFile(samplePath, wav, 0644)
+			if err != nil {
+				return fmt.Errorf("couldn't save voice sample for %s: %w", voice, err)
+			}
+		}
+	}
+	voices = voicesResponse.Voices
+	return nil
 }
 
 func TTS() {
@@ -166,6 +217,12 @@ func TTS() {
 				}
 			}
 
+			err = InitVoices()
+			if err != nil {
+				ttsColor.Println("Error while initializing voices:", err)
+				continue
+			}
+
 			var lastAuthor string
 			for msg := range TTSChannel {
 				switch t := msg.(type) {
@@ -177,13 +234,25 @@ func TTS() {
 						continue
 					}
 
+					userVoice := defaultVoiceCfg
+					if t.Author.TwitchUser != nil {
+						if userConfig, found := TwitchIndex[t.Author.TwitchUser.Key()]; found {
+							userVoice = userConfig.Voice
+						}
+					}
+					if t.Author.YouTubeUser != nil {
+						if userConfig, found := YouTubeIndex[t.Author.YouTubeUser.Key()]; found {
+							userVoice = userConfig.Voice
+						}
+					}
+
 					message := VocalizeHTML(t.ttsMsg)
 					var r *http.Request
 					authorKey := t.Author.Key()
 					if lastAuthor == authorKey {
-						r = ttsGenerateRequest(fmt.Sprintf("\"%s\"", message), "SMOrc.wav", narratorVoiceCfg)
+						r = ttsGenerateRequest(fmt.Sprintf("\"%s\"", message), userVoice, narratorVoiceCfg)
 					} else {
-						r = ttsGenerateRequest(fmt.Sprintf("* %s says: * \" %s \"", t.Author.DisplayName(), message), "SMOrc.wav", narratorVoiceCfg)
+						r = ttsGenerateRequest(fmt.Sprintf("* %s says: * \" %s \"", t.Author.DisplayName(), message), userVoice, narratorVoiceCfg)
 						lastAuthor = authorKey
 					}
 					wav, err := SynthesizeAllTalk(r)
@@ -201,7 +270,7 @@ func TTS() {
 					}
 				case Alert:
 					message := VocalizeHTML(t.HTML)
-					r := ttsGenerateRequest(fmt.Sprintf("* %s *", message), "SMOrc.wav", narratorVoiceCfg)
+					r := ttsGenerateRequest(fmt.Sprintf("* %s *", message), defaultVoiceCfg, narratorVoiceCfg)
 					wav, err := SynthesizeAllTalk(r)
 					if err != nil {
 						ttsColor.Println("AllTalk error:", err)

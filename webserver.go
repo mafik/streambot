@@ -218,6 +218,41 @@ var JavaScriptHandlers = map[string]JavaScriptHandler{
 		c.user.websockets = append(c.user.websockets, c)
 		c.Call("Welcome", c.user)
 	},
+	"ListVoices": func(c *WebsocketClient, args ...json.RawMessage) {
+		voicesChan := make(chan []string)
+		TTSChannel <- func() {
+			voicesChan <- voices
+		}
+		localVoices := <-voicesChan
+		c.Call("ListVoicesResponse", localVoices)
+	},
+	"SetVoice": func(c *WebsocketClient, args ...json.RawMessage) {
+		if c.user == nil {
+			return
+		}
+		var requestedVoice string
+		err := json.Unmarshal(args[0], &requestedVoice)
+		if err != nil {
+			return
+		}
+		voicesChan := make(chan []string)
+		TTSChannel <- func() {
+			voicesChan <- voices
+		}
+		localVoices := <-voicesChan
+		found := false
+		for _, voice := range localVoices {
+			if voice == requestedVoice {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return
+		}
+		c.user.Voice = requestedVoice
+		fmt.Println("Set voice to", requestedVoice)
+	},
 }
 
 // readPump pumps messages from the websocket connection to the hub.

@@ -68,14 +68,28 @@ input,
   text-shadow: none;
 }
 
+button[disabled],
+.select button {
+  color: #888;
+}
+
+button[disabled]:hover {
+  background: linear-gradient(180deg, #4d3e3e, #352b2b);
+}
+
 button,
-.button {
+.button,
+.select button.selected {
   font-family: "Audiowide";
   cursor: pointer;
   background: linear-gradient(180deg, #4c4c4c, #333);
   color: white;
   border: .05em outset #777;
   box-shadow: 0 .1em .2em rgba(0, 0, 0, 0.5);
+}
+
+audio {
+  vertical-align: middle;
 }
 
 button:hover,
@@ -138,6 +152,7 @@ body {
   vertical-align: middle;
   height: 60px;
   background: white;
+  text-wrap: nowrap;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

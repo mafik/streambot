@@ -1,7 +1,11 @@
 
 function UpdateTabs() {
   var activeFound = false;
-  var pagesHeight = document.getElementById('pages').clientHeight;
+  var pagesElement = document.getElementById('pages');
+  if (!pagesElement) {
+    return;
+  }
+  var pagesHeight = pagesElement.clientHeight;
   document.querySelectorAll('.tab').forEach(tab => {
     let contentElementID = tab.dataset['tab'];
     let contentElement = document.getElementById(contentElementID);
@@ -36,6 +40,33 @@ document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', TabActivate);
 });
 
+
+var userVoice = 'SMOrc';
+function LoadVoices() {
+  ws.send(JSON.stringify({ call: 'ListVoices' }));
+}
+function ListVoicesResponse(voices) {
+  let html = '';
+  for (let i in voices) {
+    html += '<audio loop id="voice-' + i + '" src="voices/' + voices[i] + '"></audio>';
+  }
+  for (let i in voices) {
+    let voice = voices[i];
+    let voiceShort = voice.split('.')[0];
+    html += '<button ';
+    if (voiceShort == userVoice) {
+      html += 'class="selected" ';
+    }
+    html += 'onclick="SetVoice(\'' + voice + '\')" onmouseenter="document.getElementById(\'voice-' + i + '\').play()" onmouseleave="document.getElementById(\'voice-' + i + '\').pause()">' + voiceShort + '</button>';
+  }
+  document.getElementById('voices').innerHTML = html;
+}
+function SetVoice(voice) {
+  userVoice = voice.split('.')[0];
+  ws.send(JSON.stringify({ call: 'SetVoice', args: [voice] }));
+  LoadVoices();
+}
+
 const chat = document.getElementById('chat');
 var password = localStorage.getItem('password');
 if (!password) {
@@ -69,7 +100,11 @@ function CopyLoginCommand() {
 }
 function Welcome(user) {
   console.log('Welcome', user);
-  document.getElementById('login-command').value = '!login ' + user.ticket;
+  let loginCommand = document.getElementById('login-command');
+  if (!loginCommand) {
+    return;
+  }
+  loginCommand.value = '!login ' + user.ticket;
   if (user.twitch) {
     document.getElementById('twitch-link').innerHTML = '<a href="https://twitch.tv/' + user.twitch.login + '" target="_blank">' + user.twitch.name + '</a>';
   } else {
@@ -80,6 +115,11 @@ function Welcome(user) {
   } else {
     document.getElementById('youtube-link').innerHTML = 'Not linked';
   }
+  let voicesSpan = document.getElementById('voices');
+  if (user.voice) {
+    userVoice = user.voice.split('.')[0];
+  }
+  voicesSpan.innerHTML = '<button class="selected" onclick="LoadVoices()">' + userVoice + '</button>';
 }
 let ecg_pings = {
   'Twitch': [],

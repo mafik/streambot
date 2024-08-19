@@ -11,9 +11,12 @@ type User struct {
 	YouTubeUser *YouTubeUser `json:"youtube,omitempty"`
 	BotUser     *BotUser     `json:"bot,omitempty"`
 	Ticket      string       `json:"ticket,omitempty"`
+	Voice       string       `json:"voice,omitempty"`
 	websockets  []*WebsocketClient
 }
 
+var TwitchIndex = map[string]*User{}
+var YouTubeIndex = map[string]*User{}
 var PasswordIndex = map[string]*User{
 	"123qwe": {
 		TwitchUser: &TwitchUser{

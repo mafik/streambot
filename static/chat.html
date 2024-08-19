@@ -117,8 +117,11 @@
       <button onclick="CopyLoginCommand()" style="cursor:copy">Copy</button>
       <p>YouTube: <span id="youtube-link">Not linked</span></p>
       <p>Twitch: <span id="twitch-link">Not linked</span></p>
-      <p><small>Authenticating account in a new browser will automatically deauthenticate it from all the others. Copy
+      <p><small>Note on using multiple browsers: Authenticating account in a new browser will automatically
+          deauthenticate it from all the others. Instead copy
           <code>localStorage.password</code> to authenticate multiple browsers.</small></p>
+      <p>Voice: <span id="voices" class="select"><button class="selected" onclick="LoadVoices()">default</button></span>
+      </p>
     </div>
     <div id="chat">Connecting...</div>
   </div>
