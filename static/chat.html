@@ -6,7 +6,9 @@
   <title>Chat</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Belanosima:wght@400;600;700&family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Audiowide&family=Belanosima:wght@400;600;700&family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <style>
     html {
@@ -49,11 +51,13 @@
       flex-basis: 100%;
     }
 
-    #chat {
+    #chat,
+    #account {
       background: #111;
       flex: 1 1 auto;
+      width: 100%;
       overflow-x: hidden;
-      overflow-y: scroll;
+      overflow-y: auto;
     }
 
     #ecg {
@@ -79,6 +83,11 @@
     .tab:not(.active) {
       opacity: 0.6;
     }
+
+    #youtube-link,
+    #twitch-link {
+      font-family: 'Belanosima', monospace;
+    }
   </style>
 </head>
 
@@ -87,15 +96,32 @@
     <div id="alert-content"></div>
   </div>
   <div id="toolbar">
-    <div id="audio"><span id="audio-highlight">No song playing</span><span id="audio-shadow">No song playing</span><span id="audio-fill">No song playing</span></div>
+    <div id="audio"><span id="audio-highlight">No song playing</span><span id="audio-shadow">No song playing</span><span
+        id="audio-fill">No song playing</span></div>
     <div class="break"></div>
-    <a class="button canvas-bg" href="https://twitch.tv/maf_pl" target="_blank"><canvas id="ecg-Twitch" width="20" height="20"></canvas><img src="twitch.svg" style="height: 1em; vertical-align: middle;"></a>
-    <a class="button canvas-bg" href="https://www.youtube.com/@MarekRogalski/streams" target="_blank"><canvas id="ecg-YouTube" width="20" height="20"></canvas><img src="youtube.svg" style="height: 1em; vertical-align: middle; margin-bottom: 6px"></a>
+    <a class="button canvas-bg" href="https://twitch.tv/maf_pl" target="_blank"><canvas id="ecg-Twitch" width="20"
+        height="20"></canvas><img src="twitch.svg" style="height: 1em; vertical-align: middle;"></a>
+    <a class="button canvas-bg" href="https://www.youtube.com/@MarekRogalski/streams" target="_blank"><canvas
+        id="ecg-YouTube" width="20" height="20"></canvas><img src="youtube.svg"
+        style="height: 1em; vertical-align: middle; margin-bottom: 6px"></a>
     <div class="expand"></div>
-    <div id="tabs"><button class="tab active" data-tab="chat">Chat</button></div>
+    <div id="tabs"><button class="tab" data-tab="account">Account</button><button class="tab active"
+        data-tab="chat">Chat</button></div>
   </div>
   <hr>
-  <div id="chat">Connecting...</div>
+  <div id="pages">
+    <div id="account">
+      <p>Paste this command into either YouTube or Twitch chat to authenticate:</p>
+      <input id="login-command" type="text" placeholder="Login command" value="!login" style="font-family: inherit"
+        size="30">
+      <button onclick="CopyLoginCommand()" style="cursor:copy">Copy</button>
+      <p>YouTube: <span id="youtube-link">Not linked</span></p>
+      <p>Twitch: <span id="twitch-link">Not linked</span></p>
+      <p><small>Authenticating account in a new browser will automatically deauthenticate it from all the others. Copy
+          <code>localStorage.password</code> to authenticate multiple browsers.</small></p>
+    </div>
+    <div id="chat">Connecting...</div>
+  </div>
   <script src="anime.min.js"></script>
   <script src="script.js"></script>
 </body>

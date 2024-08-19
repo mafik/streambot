@@ -231,7 +231,7 @@ func FetchChatMessages(initialContinuationInfo string, ytCfg YtCfg) ([]ChatEntry
 		runs := liveChatTextMessageRenderer.Message.Runs
 		if len(runs) > 0 {
 			chatMessage := ChatEntry{
-				Author: UserVariant{
+				Author: User{
 					YouTubeUser: &YouTubeUser{
 						Name:      liveChatTextMessageRenderer.AuthorName.SimpleText,
 						ChannelID: liveChatTextMessageRenderer.AuthorExternalChannelId,
@@ -251,6 +251,7 @@ func FetchChatMessages(initialContinuationInfo string, ytCfg YtCfg) ([]ChatEntry
 				if run.Text != "" {
 					chatMessage.terminalMsg += run.Text
 					chatMessage.HTML += html.EscapeString(run.Text)
+					chatMessage.OriginalMessage += run.Text
 				} else {
 					if run.Emoji.IsCustomEmoji {
 						numberOfThumbnails := len(run.Emoji.Image.Thumbnails)

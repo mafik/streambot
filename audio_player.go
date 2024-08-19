@@ -17,7 +17,7 @@ type PlayMessage struct {
 	wavData  []byte // first 44 bytes (WAV header) are ignored
 	prePlay  func() // optional function to run before playing (blocks audio playback)
 	postPlay func() // optional function to run after playing (blocks audio playback)
-	author   *UserVariant
+	author   *User
 }
 
 func WAVDuration(wav []byte) time.Duration {

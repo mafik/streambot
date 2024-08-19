@@ -103,8 +103,11 @@ func getTwitchEmotes() *map[string]string {
 	return &twitchEmotes
 }
 
-func Ban(args ...json.RawMessage) {
-	var user UserVariant
+func Ban(c *WebsocketClient, args ...json.RawMessage) {
+	if !c.admin {
+		return
+	}
+	var user User
 	err := json.Unmarshal(args[0], &user)
 	if err != nil {
 		twitchColor.Println("Couldn't unmarshal user:", err)

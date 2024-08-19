@@ -1,12 +1,54 @@
 package main
 
-type UserVariant struct {
+import (
+	"crypto/rand"
+	"encoding/base64"
+	"fmt"
+)
+
+type User struct {
 	TwitchUser  *TwitchUser  `json:"twitch,omitempty"`
 	YouTubeUser *YouTubeUser `json:"youtube,omitempty"`
 	BotUser     *BotUser     `json:"bot,omitempty"`
+	Ticket      string       `json:"ticket,omitempty"`
+	websockets  []*WebsocketClient
 }
 
-func (u UserVariant) DisplayName() string {
+var PasswordIndex = map[string]*User{
+	"123qwe": {
+		TwitchUser: &TwitchUser{
+			TwitchID: "475318376",
+			Login:    "maf_pl",
+			Name:     "maf",
+			Color:    "#6441a5",
+		},
+	},
+}
+
+var TicketIndex = map[string]*User{}
+
+func (u *User) IssueTicket() {
+	if u.Ticket != "" {
+		delete(TicketIndex, u.Ticket)
+	}
+	var randomBytes [18]byte
+	_, err := rand.Read(randomBytes[:])
+	if err != nil {
+		fmt.Println("MakeTicket couldn't generate random bytes:", err)
+		u.Ticket = ""
+		return
+	}
+	u.Ticket = base64.StdEncoding.EncodeToString(randomBytes[:])
+	TicketIndex[u.Ticket] = u
+}
+
+func (u *User) EnsureTicket() {
+	if u.Ticket == "" {
+		u.IssueTicket()
+	}
+}
+
+func (u User) DisplayName() string {
 	if u.TwitchUser != nil {
 		return u.TwitchUser.DisplayName()
 	} else if u.YouTubeUser != nil {
@@ -17,7 +59,7 @@ func (u UserVariant) DisplayName() string {
 	return ""
 }
 
-func (u UserVariant) Key() string {
+func (u User) Key() string {
 	if u.TwitchUser != nil {
 		return u.TwitchUser.Key()
 	} else if u.YouTubeUser != nil {
@@ -28,7 +70,7 @@ func (u UserVariant) Key() string {
 	return ""
 }
 
-func (u UserVariant) HTML() string {
+func (u User) HTML() string {
 	ret := ""
 	avatar_url := ""
 	if u.YouTubeUser != nil {
@@ -49,17 +91,6 @@ func (u UserVariant) HTML() string {
 	ret += u.DisplayName()
 	ret += `</strong>`
 	return ret
-}
-
-// Abstract representation of a user from any platform
-type User interface {
-	// Human-presentable name of the user. May include capitalization, emotes, etc.
-	DisplayName() string
-
-	// Globally-unique identifier for the user. Starts with the platform name.
-	Key() string
-
-	Color() string
 }
 
 const (

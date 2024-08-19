@@ -1,10 +1,85 @@
+
+function UpdateTabs() {
+  var activeFound = false;
+  var pagesHeight = document.getElementById('pages').clientHeight;
+  document.querySelectorAll('.tab').forEach(tab => {
+    let contentElementID = tab.dataset['tab'];
+    let contentElement = document.getElementById(contentElementID);
+    contentElement.style.height = pagesHeight + 'px';
+    if (tab.classList.contains('active')) {
+      activeFound = true;
+      contentElement.classList.remove('translate-left');
+      contentElement.classList.remove('translate-right');
+    } else {
+      if (activeFound) {
+        contentElement.classList.remove('translate-left');
+        contentElement.classList.add('translate-right');
+      } else {
+        contentElement.classList.add('translate-left');
+        contentElement.classList.remove('translate-right');
+      }
+    }
+  });
+}
+UpdateTabs();
+
+window.onresize = UpdateTabs;
+
+function TabActivate(e) {
+  let btn = e.target;
+  document.querySelector('.tab.active').classList.remove('active');
+  btn.classList.add('active');
+  UpdateTabs();
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', TabActivate);
+});
+
 const chat = document.getElementById('chat');
+var password = localStorage.getItem('password');
+if (!password) {
+  // Generate random password - base64 of random 18 bytes
+  // 16 bytes should be enough (128 bits of security) but since
+  // we're encoding in base64 we might as well round this to 18
+  password = "";
+  let arr = new Uint8Array(18);
+  window.crypto.getRandomValues(arr);
+  for (let i = 0; i < arr.length; ++i) {
+    password += String.fromCharCode(arr[i]);
+  }
+  password = btoa(password);
+  localStorage.setItem('password', password);
+}
+var ws;
 function OnOpen() {
   chat.textContent = '';
+  ws.send(JSON.stringify({ call: 'Password', args: [password] }));
 }
 function Reload() {
   chat.textContent = 'Reloading...';
   window.location.reload();
+}
+function CopyLoginCommand() {
+  let loginCommand = document.getElementById('login-command');
+  loginCommand.select();
+  loginCommand.setSelectionRange(0, 99999);
+  document.execCommand('copy');
+  ShowAlert('<span style="font-family: Belanosima">Copied to clipboard</span>', 500);
+}
+function Welcome(user) {
+  console.log('Welcome', user);
+  document.getElementById('login-command').value = '!login ' + user.ticket;
+  if (user.twitch) {
+    document.getElementById('twitch-link').innerHTML = '<a href="https://twitch.tv/' + user.twitch.login + '" target="_blank">' + user.twitch.name + '</a>';
+  } else {
+    document.getElementById('twitch-link').innerHTML = 'Not linked';
+  }
+  if (user.youtube) {
+    document.getElementById('youtube-link').innerHTML = '<a href="https://youtube.com/channel/' + user.youtube.channel + '" target="_blank"><img class="avatar" src="' + user.youtube.avatar_url + '">' + user.youtube.name + '</a>';
+  } else {
+    document.getElementById('youtube-link').innerHTML = 'Not linked';
+  }
 }
 let ecg_pings = {
   'Twitch': [],
@@ -316,7 +391,6 @@ function SetStreamTitle(title) {
     titleElement.value = title;
   }
 }
-var ws;
 function Connect() {
   let protocol = location.protocol == 'https:' ? 'wss:' : 'ws:';
   let domain = (location.host == "" || location.host == "absolute") ? 'localhost:3447' : location.host;

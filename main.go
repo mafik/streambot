@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -18,9 +19,9 @@ type Alert struct {
 }
 
 type ChatEntry struct {
-	Author          UserVariant `json:"author,omitempty"`
-	OriginalMessage string      `json:"original_message"`
-	HTML            string      `json:"html,omitempty"`
+	Author          User   `json:"author,omitempty"`
+	OriginalMessage string `json:"original_message"`
+	HTML            string `json:"html,omitempty"`
 	ttsMsg          string
 	timestamp       time.Time
 	terminalMsg     string
@@ -69,6 +70,30 @@ func ReadLastChatLog() ([]ChatEntry, error) {
 func MainOnChatEntry(t ChatEntry) {
 	if t.terminalMsg != "" {
 		chat_color.Printf("%s", t.terminalMsg)
+	}
+
+	if strings.HasPrefix(t.OriginalMessage, "!login ") {
+		iSpace := strings.IndexRune(t.OriginalMessage, ' ')
+		if iSpace == -1 {
+			// impossible really
+			iSpace = len(t.OriginalMessage) - 1
+		}
+		ticket := t.OriginalMessage[iSpace+1:]
+		user, found := TicketIndex[ticket]
+		if !found {
+			return
+		}
+		if t.Author.TwitchUser != nil {
+			user.TwitchUser = t.Author.TwitchUser
+		}
+		if t.Author.YouTubeUser != nil {
+			user.YouTubeUser = t.Author.YouTubeUser
+		}
+		user.IssueTicket() // invalidate the old ticket
+		for _, client := range user.websockets {
+			client.Call("Welcome", user)
+		}
+		return
 	}
 
 	chat_log = append(chat_log, t)

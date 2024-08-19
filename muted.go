@@ -10,7 +10,7 @@ import (
 
 var muted *sync.Map
 
-func IsMuted(user UserVariant) bool {
+func IsMuted(user User) bool {
 	_, is_muted := muted.Load(user.Key())
 	return is_muted
 }
@@ -26,7 +26,7 @@ func readMuted() *sync.Map {
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		var author UserVariant
+		var author User
 		err = json.Unmarshal([]byte(scanner.Text()), &author)
 		if err != nil {
 			warn_color.Println("Couldn't unmarshal muted user:", err)
@@ -63,12 +63,15 @@ const BOT_ICON = `<img src="bot.svg" class="emoji">`
 const MUTED_ICON = `<img src="muted.svg" class="emoji">`
 const UNMUTED_ICON = `<img src="unmuted.svg" class="emoji">`
 
-func ToggleMuted(args ...json.RawMessage) {
+func ToggleMuted(c *WebsocketClient, args ...json.RawMessage) {
+	if !c.admin {
+		return
+	}
 	if len(args) != 1 {
 		warn_color.Println("ToggleMuted: wrong number of arguments:", args)
 		return
 	}
-	var user UserVariant
+	var user User
 	err := json.Unmarshal(args[0], &user)
 	if err != nil {
 		warn_color.Println("ToggleMuted: couldn't unmarshal user:", err)

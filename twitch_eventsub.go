@@ -187,7 +187,7 @@ func TwitchEventSub() {
 						TTSChannel <- Alert{
 							HTML: fmt.Sprintf(`<div class="big">%s</div>Just followed on Twitch!`, event.UserName),
 							onPlay: func() {
-								author := UserVariant{TwitchUser: &TwitchUser{TwitchID: event.UserID, Login: event.UserLogin, Name: event.UserName}, BotUser: &BotUser{}}
+								author := User{TwitchUser: &TwitchUser{TwitchID: event.UserID, Login: event.UserLogin, Name: event.UserName}, BotUser: &BotUser{}}
 								MainChannel <- ChatEntry{
 									HTML:        fmt.Sprintf("%s 💜 just followed on Twitch!", author.HTML()),
 									terminalMsg: fmt.Sprintf("  %s 💜 just followed on Twitch!\n", author.DisplayName()),
@@ -206,7 +206,7 @@ func TwitchEventSub() {
 						TTSChannel <- Alert{
 							HTML: fmt.Sprintf(`<div class="big">%s</div>is raiding with %d viewers!`, event.FromBroadcasterUserName, event.Viewers),
 							onPlay: func() {
-								author := UserVariant{TwitchUser: &TwitchUser{TwitchID: event.FromBroadcasterUserID, Login: event.FromBroadcasterUserLogin, Name: event.FromBroadcasterUserName}, BotUser: &BotUser{}}
+								author := User{TwitchUser: &TwitchUser{TwitchID: event.FromBroadcasterUserID, Login: event.FromBroadcasterUserLogin, Name: event.FromBroadcasterUserName}, BotUser: &BotUser{}}
 								MainChannel <- ChatEntry{
 									HTML:        fmt.Sprintf(TWITCH_ICON+" %s 🚨 is raiding with %d viewers!", author.HTML(), event.Viewers),
 									terminalMsg: fmt.Sprintf("  %s 🚨 is raiding with %d viewers!\n", author.DisplayName(), event.Viewers),
@@ -228,7 +228,7 @@ func TwitchEventSub() {
 						twitchColor.Println(str_msg)
 
 						entry := ChatEntry{
-							Author: UserVariant{
+							Author: User{
 								TwitchUser: &TwitchUser{
 									TwitchID: event.ChatterUserID,
 									Name:     event.ChatterUserName,
@@ -257,7 +257,7 @@ func TwitchEventSub() {
 								entry.terminalMsg += fmt.Sprintf("[%s]", fragment.Text)
 								entry.HTML += fmt.Sprintf("<img title=\"%s\" class=\"emoji\" src=\"https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0\" srcset=\"https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0 1x,https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/2.0 2x,https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/3.0 4x\">", fragment.Text, fragment.Emote.ID, fragment.Emote.ID, fragment.Emote.ID, fragment.Emote.ID)
 							case "mention":
-								mention := UserVariant{
+								mention := User{
 									TwitchUser: &TwitchUser{
 										TwitchID: fragment.Mention.UserID,
 										Login:    fragment.Mention.UserLogin,

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -44,6 +45,7 @@ type WebsocketClient struct {
 	conn  *websocket.Conn
 	send  chan []byte
 	admin bool
+	user  *User
 }
 
 type callRequest struct {
@@ -112,12 +114,15 @@ type JavaScriptMessage struct {
 	Args []json.RawMessage `json:"args"`
 }
 
-type JavaScriptHandler func(...json.RawMessage)
+type JavaScriptHandler func(*WebsocketClient, ...json.RawMessage)
 
 var JavaScriptHandlers = map[string]JavaScriptHandler{
 	"ToggleMuted": ToggleMuted,
 	"Ban":         Ban,
-	"ShowAlert": func(args ...json.RawMessage) {
+	"ShowAlert": func(c *WebsocketClient, args ...json.RawMessage) {
+		if !c.admin {
+			return
+		}
 		var html string
 		err := json.Unmarshal(args[0], &html)
 		if err != nil {
@@ -129,7 +134,10 @@ var JavaScriptHandlers = map[string]JavaScriptHandler{
 		}
 		fmt.Println("Debug Alert:", html)
 	},
-	"SetTitle": func(args ...json.RawMessage) {
+	"SetTitle": func(c *WebsocketClient, args ...json.RawMessage) {
+		if !c.admin {
+			return
+		}
 		var title string
 		err := json.Unmarshal(args[0], &title)
 		if err != nil {
@@ -188,6 +196,28 @@ var JavaScriptHandlers = map[string]JavaScriptHandler{
 			return nil
 		}
 	},
+	"Password": func(c *WebsocketClient, args ...json.RawMessage) {
+		if len(args) != 1 {
+			return // don't log anything - could be malicious
+		}
+		if c.user != nil {
+			return // already logged in
+		}
+		var password string
+		err := json.Unmarshal(args[0], &password)
+		if err != nil {
+			fmt.Println("Can't unmarshal password: ", err)
+			return
+		}
+		c.user = PasswordIndex[password]
+		if c.user == nil {
+			c.user = &User{}
+			PasswordIndex[password] = c.user
+		}
+		c.user.EnsureTicket()
+		c.user.websockets = append(c.user.websockets, c)
+		c.Call("Welcome", c.user)
+	},
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -217,12 +247,10 @@ func (c *WebsocketClient) readPump() {
 			fmt.Println(err)
 			continue
 		}
-		if c.admin {
-			if handler, ok := JavaScriptHandlers[message.Call]; ok {
-				handler(message.Args...)
-			} else {
-				fmt.Printf("Unknown JavaScript method: %s(%v)\n", message.Call, message.Args)
-			}
+		if handler, ok := JavaScriptHandlers[message.Call]; ok {
+			handler(c, message.Args...)
+		} else {
+			fmt.Printf("Unknown JavaScript method: %s(%v)\n", message.Call, message.Args)
 		}
 	}
 }
@@ -359,6 +387,12 @@ func StartWebserver(OnNewClient chan *WebsocketClient) *WebsocketHub {
 				if _, ok := hub.clients[client]; ok {
 					delete(hub.clients, client)
 					close(client.send)
+				}
+				if client.user != nil {
+					client.user.websockets = slices.DeleteFunc(client.user.websockets, func(c *WebsocketClient) bool {
+						return c == client
+					})
+					client.user = nil
 				}
 			}
 		}

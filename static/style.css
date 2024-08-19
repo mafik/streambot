@@ -391,3 +391,31 @@ body>hr {
 .tab:not(.active) {
   opacity: 0.6;
 }
+
+p {
+  margin: .2em .4em 0 .4em;
+}
+
+code {
+  font-size: inherit;
+  font-family: 'Audiowide', monospace;
+}
+
+#pages {
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+}
+
+#pages>div {
+  position: absolute;
+  transition: transform 300ms;
+}
+
+#pages>div.translate-left {
+  transform: translateX(-100%);
+}
+
+#pages>div.translate-right {
+  transform: translateX(100%);
+}
