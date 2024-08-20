@@ -237,7 +237,8 @@ func FetchChatMessages(initialContinuationInfo string, ytCfg YtCfg) ([]ChatEntry
 						ChannelID: liveChatTextMessageRenderer.AuthorExternalChannelId,
 					},
 				},
-				timestamp: parseMicroSeconds(liveChatTextMessageRenderer.TimestampUsec),
+				YouTubeMessageID: "unknown",
+				timestamp:        parseMicroSeconds(liveChatTextMessageRenderer.TimestampUsec),
 			}
 			bestSize := 0
 			for _, thumbnail := range liveChatTextMessageRenderer.AuthorPhoto.Thumbnails {
@@ -363,6 +364,7 @@ type YouTubeFunc func(*youtube.Service) error
 var YouTubeBotChannel = make(chan YouTubeFunc)
 var youtubeColor = color.New(color.FgRed)
 var youtubeVideoId string
+var youtubeLiveChatID string
 
 func YouTubeChatBot() {
 	outerBackoff := backoff.Backoff{
@@ -371,7 +373,7 @@ func YouTubeChatBot() {
 	}
 	for {
 		outerBackoff.Attempt()
-		videoIdChan := make(chan string)
+		videoIdChan := make(chan *youtube.LiveBroadcast)
 		YouTubeBotChannel <- func(youtube *youtube.Service) error {
 			call := youtube.LiveBroadcasts.List([]string{"id", "snippet", "status"})
 			call.Mine(true)
@@ -384,21 +386,23 @@ func YouTubeChatBot() {
 				if result.Status.LifeCycleStatus == "complete" {
 					continue
 				}
-				videoIdChan <- result.Id
+				videoIdChan <- result
 				return nil
 			}
-			videoIdChan <- ""
+			videoIdChan <- nil
 			return nil
 		}
-		youtubeVideoId = <-videoIdChan
+		youtubeBroadcast := <-videoIdChan
 
-		if youtubeVideoId == "" {
+		if youtubeBroadcast == nil {
 			dashboardURL := fmt.Sprintf("https://studio.youtube.com/channel/%s/livestreaming/dashboard?c=%s", YT_CHANNEL_ID, YT_CHANNEL_ID)
 			youtubeColor.Printf("No live stream found. Opening %s to create a new one!\n", dashboardURL)
 			openURL(dashboardURL)
 			time.Sleep(15 * time.Second) // give some time for the YT dashboard to create a new stream
 			continue
 		}
+		youtubeVideoId = youtubeBroadcast.Id
+		youtubeLiveChatID = youtubeBroadcast.Snippet.LiveChatId
 
 		youtubeColor.Println("Connecting to https://youtu.be/" + youtubeVideoId)
 
