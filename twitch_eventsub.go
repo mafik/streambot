@@ -237,6 +237,7 @@ func TwitchEventSub() {
 								},
 							},
 							OriginalMessage: event.Message.Text,
+							TwitchMessageID: event.MessageID,
 						}
 
 						entry.terminalMsg = fmt.Sprintf("  %s: ", entry.Author.DisplayName())

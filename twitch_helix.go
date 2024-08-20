@@ -203,7 +203,7 @@ func TwitchHelixBot() {
 		client.OnUserAccessTokenRefreshed(OnUserAccessTokenRefreshed)
 		twitchAuthUrl = client.GetAuthorizationURL(&helix.AuthorizationURLParams{
 			ResponseType: "code",
-			Scopes:       []string{"channel:manage:broadcast", "moderator:manage:banned_users", "moderator:read:followers", "user:read:chat", "channel:bot"},
+			Scopes:       []string{"channel:manage:broadcast", "moderator:manage:banned_users", "moderator:read:followers", "user:read:chat", "channel:bot", "moderator:manage:chat_messages"},
 		})
 		WriteStringToFile(path.Join(baseDir, "twitch_auth_url.txt"), twitchAuthUrl)
 		getUsersResp, err := client.GetUsers(&helix.UsersParams{Logins: []string{twitchBroadcasterUsername, twitchBotUsername}})

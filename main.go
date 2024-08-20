@@ -11,6 +11,7 @@ import (
 
 	"github.com/fatih/color"
 	externalip "github.com/glendc/go-external-ip"
+	"github.com/nicklaw5/helix/v2"
 )
 
 type Alert struct {
@@ -22,9 +23,28 @@ type ChatEntry struct {
 	Author          User   `json:"author,omitempty"`
 	OriginalMessage string `json:"original_message"`
 	HTML            string `json:"html,omitempty"`
+	TwitchMessageID string `json:"twitch_message_id,omitempty"`
 	ttsMsg          string
 	timestamp       time.Time
 	terminalMsg     string
+}
+
+func (t *ChatEntry) DeleteUpstream() {
+	if t.TwitchMessageID != "" {
+		TwitchHelixChannel <- func(client *helix.Client) {
+			resp, err := client.DeleteChatMessage(&helix.DeleteChatMessageParams{
+				BroadcasterID: twitchBroadcasterID,
+				ModeratorID:   twitchBotID,
+				MessageID:     t.TwitchMessageID,
+			})
+			if err != nil {
+				warn_color.Println("Couldn't delete message:", err)
+			}
+			if resp.StatusCode != 204 {
+				warn_color.Println("Couldn't delete message:", resp.StatusCode)
+			}
+		}
+	}
 }
 
 var chat_color *color.Color = color.New(color.FgWhite).Add(color.Bold)
@@ -73,6 +93,7 @@ func MainOnChatEntry(t ChatEntry) {
 	}
 
 	if strings.HasPrefix(t.OriginalMessage, "!login ") {
+		t.DeleteUpstream()
 		iSpace := strings.IndexRune(t.OriginalMessage, ' ')
 		if iSpace == -1 {
 			// impossible really
