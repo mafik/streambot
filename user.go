@@ -3,7 +3,9 @@ package main
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"path"
 )
 
 type User struct {
@@ -17,18 +19,54 @@ type User struct {
 
 var TwitchIndex = map[string]*User{}
 var YouTubeIndex = map[string]*User{}
-var PasswordIndex = map[string]*User{
-	"123qwe": {
-		TwitchUser: &TwitchUser{
-			TwitchID: "475318376",
-			Login:    "maf_pl",
-			Name:     "maf",
-			Color:    "#6441a5",
-		},
-	},
+var PasswordIndex = map[string]*User{}
+var TicketIndex = map[string]*User{}
+
+var usersPath = path.Join(baseDir, "secrets", "users.json")
+
+func SaveUsers() error {
+	var usersToSave map[string]User = map[string]User{}
+	for password, user := range PasswordIndex {
+		worthSaving := user.TwitchUser != nil || user.YouTubeUser != nil || user.Voice != ""
+		if worthSaving {
+			// skip non-essential data
+			userToSave := *user
+			userToSave.websockets = nil
+			userToSave.Ticket = ""
+			usersToSave[password] = userToSave
+		}
+	}
+	bytes, err := json.Marshal(usersToSave)
+	if err != nil {
+		return fmt.Errorf("couldn't marshal users to save: %w", err)
+	}
+	err = WriteStringToFile(usersPath, string(bytes))
+	if err != nil {
+		return fmt.Errorf("couldn't write users to file: %w", err)
+	}
+	return nil
 }
 
-var TicketIndex = map[string]*User{}
+func LoadUsers() error {
+	usersStr, err := ReadStringFromFile(usersPath)
+	if err != nil {
+		return fmt.Errorf("couldn't read users file: %w", err)
+	}
+	err = json.Unmarshal([]byte(usersStr), &PasswordIndex)
+	if err != nil {
+		return fmt.Errorf("couldn't unmarshal users: %w", err)
+	}
+	for _, user := range PasswordIndex {
+		user.IssueTicket()
+		if user.TwitchUser != nil {
+			TwitchIndex[user.TwitchUser.Key()] = user
+		}
+		if user.YouTubeUser != nil {
+			YouTubeIndex[user.YouTubeUser.Key()] = user
+		}
+	}
+	return nil
+}
 
 func (u *User) IssueTicket() {
 	if u.Ticket != "" {

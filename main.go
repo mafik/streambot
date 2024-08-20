@@ -95,6 +95,10 @@ func MainOnChatEntry(t ChatEntry) {
 		for _, client := range user.websockets {
 			client.Call("Welcome", user)
 		}
+		err := SaveUsers()
+		if err != nil {
+			warn_color.Println("Couldn't save users:", err)
+		}
 		return
 	}
 
@@ -180,6 +184,11 @@ func main() {
 	chat_log, err = ReadLastChatLog()
 	if err != nil {
 		warn_color.Println("Error while reading chat_log.txt:", err)
+	}
+
+	err = LoadUsers()
+	if err != nil {
+		warn_color.Println("Error while loading users:", err)
 	}
 
 	for {

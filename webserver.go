@@ -251,7 +251,10 @@ var JavaScriptHandlers = map[string]JavaScriptHandler{
 			return
 		}
 		c.user.Voice = requestedVoice
-		fmt.Println("Set voice to", requestedVoice)
+		err = SaveUsers()
+		if err != nil {
+			fmt.Println("Couldn't save users:", err)
+		}
 	},
 }
 

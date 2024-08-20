@@ -27,6 +27,7 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
 - High-quality TTS for chat messages with stylized voices
   - Mindful delay of TTS messages while speaking
   - Stop TTS playback when user is muted
+  - Users can change their voices using viewer panel (see below)
 - Control panel available by opening `control.html` (locally or through `http://IP:3447/control.html`)
   - Button for muting TTS for specific users
   - Button for banning users on Twitch
@@ -37,11 +38,10 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
   - ***TODO**: button for banning users on YT*
   - ***TODO**: counters with counts of viewers on YT and Twitch*
   - ***TODO**: auto-ban regexps*
-- Viewer panel available by opening `chat.html`
+- Viewer panel available by opening `/`
   - Current music track indicator
   - Links to Twitch and YouTube
   - Chat view
-  - ***TODO**: Custom voices for viewers*
   - ***TODO**: Animated avatars for viewers*
 - ***TODO**: automatic streaming notifications on Twitter and Mastodon*
 - On-stream alerts
