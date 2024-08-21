@@ -41,6 +41,7 @@ func BarrierMonitor() {
 
 			for {
 				backoff.Attempt()
+				newSceneCounter := 0
 				for {
 					mouseScreen, err := vrSsh.Exec("tail /run/user/1000/barrier.log -n 10 | rg -NoP 'INFO: switch from \".*\" to \"(.*)\" at' -or '$1' | tail -n 1")
 					if err != nil {
@@ -56,6 +57,7 @@ func BarrierMonitor() {
 					obsSceneSwitchable := false
 					mouseScreenSwitchable := false
 					var targetScene *string = nil
+
 					for _, monitorConfig := range monitorConfigs {
 						if monitorConfig.OBSScene == obsScene {
 							obsSceneSwitchable = true
@@ -66,17 +68,23 @@ func BarrierMonitor() {
 						}
 					}
 
-					if obsSceneSwitchable && mouseScreenSwitchable && *targetScene != obsScene {
-						col.Println("Switching OBS scene to", *targetScene)
-						err = OBSSwitchScene(*targetScene)
-						if err != nil {
-							col.Println("Couldn't switch OBS scene:", err)
-							break
+					if obsSceneSwitchable && mouseScreenSwitchable {
+						if *targetScene != obsScene {
+							newSceneCounter++
+							if newSceneCounter >= 2 {
+								col.Println("Switching OBS scene to", *targetScene)
+								err = OBSSwitchScene(*targetScene)
+								if err != nil {
+									col.Println("Couldn't switch OBS scene:", err)
+									break
+								}
+								newSceneCounter = 0
+							}
+						} else {
+							newSceneCounter = 0
 						}
-						time.Sleep(5 * time.Second)
-					} else {
-						time.Sleep(1 * time.Second)
 					}
+					time.Sleep(1 * time.Second)
 				}
 
 			}
