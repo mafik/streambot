@@ -426,7 +426,7 @@ function OnMessage(event) {
 }
 function SetStreamTitle(title) {
   document.title = title;
-  let titleElement = document.getElementById('title');
+  let titleElement = document.getElementById('title-input');
   if (titleElement) {
     titleElement.value = title;
   }
