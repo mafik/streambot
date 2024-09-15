@@ -48,7 +48,7 @@ func VlcMonitor(audioMessages chan string) {
 							col.Println(output)
 						}
 						col.Println("VLC window not found, starting VLC...")
-						vlcPid, err = vlcSsh.Exec("DISPLAY=:0 vlc /mnt/hdd3tb/AutomatLivestreams/archive/Music >/dev/null 2>&1 & ; echo $last_pid")
+						vlcPid, err = vlcSsh.Exec("DISPLAY=:0 vlc /mnt/hdd8tb/AutomatLivestreams/archive/Music >/dev/null 2>&1 & ; echo $last_pid")
 						if err != nil {
 							col.Println("Couldn't start vlc:", err)
 							break
