@@ -220,7 +220,6 @@ func main() {
 
 	go TwitchHelixBot()
 	go TwitchEventSub()
-
 	go YouTubeBot()
 	go AudioPlayer()
 	go OBS()
@@ -228,7 +227,7 @@ func main() {
 	lastAudioMessage := ""
 	audioMessages := make(chan string)
 	go VlcMonitor(audioMessages)
-	go BarrierMonitor()
+	// go BarrierMonitor()
 
 	go TTS()
 
