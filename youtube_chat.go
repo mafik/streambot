@@ -363,7 +363,19 @@ type YouTubeFunc func(*youtube.Service) error
 
 var YouTubeBotChannel = make(chan YouTubeFunc)
 var youtubeColor = color.New(color.FgRed)
+
+// This should only be accessed from YT goroutine use `GetYouTubeVideoID` instead.
 var youtubeVideoId string
+
+func GetYouTubeVideoID() string {
+	youtubeVideoIdChan := make(chan string)
+	YouTubeBotChannel <- func(youtube *youtube.Service) error {
+		youtubeVideoIdChan <- youtubeVideoId
+		return nil
+	}
+	return <-youtubeVideoIdChan
+}
+
 var youtubeLiveChatID string
 
 func YouTubeChatBot() {
