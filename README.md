@@ -43,7 +43,9 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
   - Links to Twitch and YouTube
   - Chat view
   - ***TODO**: Animated avatars for viewers*
-- ***TODO**: automatic streaming notifications on Twitter and Mastodon*
+- Automatic streaming notifications
+  - on Twitter
+  - ***TODO**: on Mastodon*
 - On-stream alerts
   - Twitch follows & raids
   - TTS narrator reads out the alerts
