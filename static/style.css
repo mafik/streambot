@@ -342,15 +342,13 @@ body {
 
 #toolbar>.iframe-wrapper {
   flex-grow: 1;
-  min-height: 250px;
+  min-height: 350px;
 }
 
 #toolbar>.iframe-wrapper>iframe {
   border-width: 3px;
-  width: calc(150% - 6px);
-  height: calc(150% - 6px);
-  transform: scale(0.6666);
-  transform-origin: 0 0;
+  width: calc(100% - 6px);
+  height: calc(100% - 6px);
   border-style: solid;
   border-radius: 5px;
   background: black;

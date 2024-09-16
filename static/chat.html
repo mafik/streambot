@@ -6,9 +6,7 @@
   <title>Chat</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Audiowide&family=Belanosima:wght@400;600;700&family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Belanosima:wght@400;600;700&family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <style>
     html {
@@ -96,24 +94,20 @@
     <div id="alert-content"></div>
   </div>
   <div id="toolbar">
-    <div id="audio"><span id="audio-highlight">No song playing</span><span id="audio-shadow">No song playing</span><span
-        id="audio-fill">No song playing</span></div>
+    <div id="audio"><span id="audio-highlight">No song playing</span><span id="audio-shadow">No song playing</span><span id="audio-fill">No song playing</span></div>
     <div class="break"></div>
-    <a class="button canvas-bg" href="https://twitch.tv/maf_pl" target="_blank"><canvas id="ecg-Twitch" width="20"
-        height="20"></canvas><img src="twitch.svg" style="height: 1em; vertical-align: middle;"></a>
-    <a class="button canvas-bg" href="https://www.youtube.com/@MarekRogalski/streams" target="_blank"><canvas
-        id="ecg-YouTube" width="20" height="20"></canvas><img src="youtube.svg"
-        style="height: 1em; vertical-align: middle; margin-bottom: 6px"></a>
-    <div class="expand"></div>
-    <div id="tabs"><button class="tab" data-tab="account">Account</button><button class="tab active"
-        data-tab="chat">Chat</button></div>
+    <a class="button canvas-bg" href="https://twitch.tv/maf_pl" target="_blank"><canvas id="ecg-Twitch" width="20" height="20"></canvas><img src="twitch.svg" style="height: 1em; vertical-align: middle;"></a>
+    <a class="button canvas-bg" href="https://www.youtube.com/@MarekRogalski/streams" target="_blank"><canvas id="ecg-YouTube" width="20" height="20"></canvas><img src="youtube.svg" style="height: 1em; vertical-align: middle; margin-bottom: 6px"></a>
+    <a class="button" href="https://tv.algora.io/maf" target="_blank"><img src="algora.webp" style="width: auto; height: 1em; vertical-align: middle; margin-top: -7px"></a>
+    <div class="expand">
+    </div>
+    <div id="tabs"><button class="tab" data-tab="account">Account</button><button class="tab active" data-tab="chat">Chat</button></div>
   </div>
   <hr>
   <div id="pages">
     <div id="account">
       <p>Paste this command into either YouTube or Twitch chat to authenticate:</p>
-      <input id="login-command" type="text" placeholder="Login command" value="!login" style="font-family: inherit"
-        size="30">
+      <input id="login-command" type="text" placeholder="Login command" value="!login" style="font-family: inherit" size="30">
       <button onclick="CopyLoginCommand()" style="cursor:copy">Copy</button>
       <p>YouTube: <span id="youtube-link">Not linked</span></p>
       <p>Twitch: <span id="twitch-link">Not linked</span></p>
