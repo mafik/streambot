@@ -144,9 +144,8 @@ body {
 }
 
 #audio {
-  position: fixed;
-  bottom: 0;
-  left: 80px;
+  position: relative;
+  display: inline-block;
   font: 44px "Belanosima";
   text-align: left;
   vertical-align: middle;

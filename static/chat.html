@@ -22,10 +22,6 @@
 
     #audio {
       position: relative;
-      left: auto;
-      bottom: auto;
-      display: block;
-      font-size: 55px;
       transform-origin: left;
       text-wrap: nowrap;
       z-index: inherit;
@@ -86,6 +82,14 @@
     #twitch-link {
       font-family: 'Belanosima', monospace;
     }
+
+    #music {
+      box-sizing: border-box;
+      width: 100%;
+      padding: .5em;
+      display: flex;
+      flex-direction: column;
+    }
   </style>
 </head>
 
@@ -94,17 +98,22 @@
     <div id="alert-content"></div>
   </div>
   <div id="toolbar">
-    <div id="audio"><span id="audio-highlight">No song playing</span><span id="audio-shadow">No song playing</span><span id="audio-fill">No song playing</span></div>
     <div class="break"></div>
     <a class="button canvas-bg" href="https://twitch.tv/maf_pl" target="_blank"><canvas id="ecg-Twitch" width="20" height="20"></canvas><img src="twitch.svg" style="height: 1em; vertical-align: middle;"></a>
     <a class="button canvas-bg" href="https://www.youtube.com/@MarekRogalski/streams" target="_blank"><canvas id="ecg-YouTube" width="20" height="20"></canvas><img src="youtube.svg" style="height: 1em; vertical-align: middle; margin-bottom: 6px"></a>
     <a class="button" href="https://tv.algora.io/maf" target="_blank"><img src="algora.webp" style="width: auto; height: 1em; vertical-align: middle; margin-top: -7px"></a>
     <div class="expand">
     </div>
-    <div id="tabs"><button class="tab" data-tab="account">Account</button><button class="tab active" data-tab="chat">Chat</button></div>
+    <div id="tabs"><button class="tab" data-tab="music">Music</button><button class="tab" data-tab="account">Account</button><button class="tab active" data-tab="chat">Chat</button></div>
   </div>
   <hr>
   <div id="pages">
+    <div id="music">
+      <div>Current track:
+        <div id="audio"><span id="audio-highlight">No song playing</span><span id="audio-shadow">No song playing</span><span id="audio-fill">No song playing</span></div>
+      </div>
+      <iframe style="border-radius: .5em; flex: 1 1 0;" src="//automat.org/archive/Music/"></iframe>
+    </div>
     <div id="account">
       <p>Paste this command into either YouTube or Twitch chat to authenticate:</p>
       <input id="login-command" type="text" placeholder="Login command" value="!login" style="font-family: inherit" size="30">
