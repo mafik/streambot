@@ -195,12 +195,6 @@ var JavaScriptHandlers = map[string]JavaScriptHandler{
 			}
 			return nil
 		}
-
-		// Send Twitter notification
-		youtubeVideoIdLocal := GetYouTubeVideoID()
-		tweet := fmt.Sprintf("🔴 #Automat #LiveCoding: \"%s\"! 🎉🎉🎉\n\n📺 https://youtu.be/%s https://twitch.tv/maf_pl https://tv.algora.io/maf", title, youtubeVideoIdLocal)
-		PostTweet(tweet)
-
 	},
 	"Password": func(c *WebsocketClient, args ...json.RawMessage) {
 		if len(args) != 1 {
@@ -261,6 +255,17 @@ var JavaScriptHandlers = map[string]JavaScriptHandler{
 		if err != nil {
 			fmt.Println("Couldn't save users:", err)
 		}
+	},
+	"MicroblogNotify": func(c *WebsocketClient, args ...json.RawMessage) {
+		if !c.admin {
+			return
+		}
+
+		// Send Twitter notification
+		youtubeVideoIdLocal := GetYouTubeVideoID()
+		tweet := fmt.Sprintf("🔴 Live now: \"%s\"! 🎉🎉🎉\n\n📺 https://youtu.be/%s https://twitch.tv/maf_pl https://tv.algora.io/maf", twitchTitle, youtubeVideoIdLocal)
+		PostTweet(tweet)
+		fmt.Printf("Tweeted: %s\n", tweet)
 	},
 }
 

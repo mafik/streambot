@@ -64,6 +64,7 @@
       <input id="title-input" placeholder="Stream title">
       <button id="title-submit" onclick="ws.send(JSON.stringify({ call: 'SetTitle', args: [document.getElementById('title-input').value] }));">Update</button>
     </div>
+    <button onclick="ws.send(JSON.stringify({ call: 'MicroblogNotify', args: [] }));"><img src="twitter.svg" style="height: 1em; vertical-align: baseline; margin-bottom: -5px"></button>
     <a class="button canvas-bg" href="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/edit-stream-info" target="_blank"><canvas id="ecg-Twitch" width="20" height="20"></canvas><img src="twitch.svg" style="height: 1em; vertical-align: middle;"></a>
     <a class="button canvas-bg" href="https://studio.youtube.com/channel/UCBPKTkmfqWCVnrEv8CBPrbg/livestreaming/dashboard?c=UCBPKTkmfqWCVnrEv8CBPrbg" target="_blank"><canvas id="ecg-YouTube" width="20" height="20"></canvas><img src="youtube.svg" style="height: 1em; vertical-align: middle; margin-bottom: 6px"></a>
     <div id="tabs"><button class="tab active" data-tab="chat">Chat</button></div>
