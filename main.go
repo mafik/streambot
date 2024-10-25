@@ -13,6 +13,7 @@ import (
 	"github.com/fatih/color"
 	externalip "github.com/glendc/go-external-ip"
 	"github.com/nicklaw5/helix/v2"
+	"github.com/pemistahl/lingua-go"
 	"google.golang.org/api/youtube/v3"
 )
 
@@ -30,6 +31,14 @@ type ChatEntry struct {
 	ttsMsg           string
 	timestamp        time.Time
 	terminalMsg      string
+}
+
+func (t ChatEntry) TryTTS() {
+	select {
+	case TTSChannel <- t:
+	default:
+		fmt.Println("TTS channel is full, dropping message")
+	}
 }
 
 func (t *ChatEntry) DeleteUpstream() {
@@ -118,6 +127,9 @@ func ReadLastChatLog() ([]ChatEntry, error) {
 	return chat_log, nil
 }
 
+var linguaDetector = lingua.NewLanguageDetectorBuilder().FromLanguages(lingua.English, lingua.Polish).Build()
+var lastReminderTime time.Time
+
 func MainOnChatEntry(t ChatEntry) {
 	if t.terminalMsg != "" {
 		chat_color.Printf("%s", t.terminalMsg)
@@ -154,6 +166,24 @@ func MainOnChatEntry(t ChatEntry) {
 		return
 	}
 
+	polishConfidence := linguaDetector.ComputeLanguageConfidence(t.OriginalMessage, lingua.Polish)
+	if polishConfidence > 0.5 {
+		fmt.Printf("Blocking likely Polish message: \"%s\" (confidence %f)\n", t.OriginalMessage, polishConfidence)
+		t.DeleteUpstream()
+		currentTime := time.Now()
+		if currentTime.Sub(lastReminderTime) > 5*time.Minute {
+			languageRemainder := ChatEntry{
+				Author: User{
+					Voice: "bg3_narrator.wav",
+				},
+				ttsMsg: fmt.Sprintf("Hello %s. This is a reminder that TTS only works in English. Please use English in chat... Thank you!", t.Author.DisplayName()),
+			}
+			languageRemainder.TryTTS()
+			lastReminderTime = currentTime
+		}
+		return
+	}
+
 	chat_log = append(chat_log, t)
 	if len(chat_log) > nChatMessages {
 		chat_log = chat_log[1:]
@@ -169,12 +199,7 @@ func MainOnChatEntry(t ChatEntry) {
 	}
 	Webserver.Call("OnChatMessage", t)
 	if t.ttsMsg != "" {
-		// try writing to TTSChannel (ignore if full)
-		select {
-		case TTSChannel <- t:
-		default:
-			warn_color.Println("TTS is busy, dropping message")
-		}
+		t.TryTTS()
 	}
 }
 
@@ -227,7 +252,7 @@ func main() {
 	lastAudioMessage := ""
 	audioMessages := make(chan string)
 	go VlcMonitor(audioMessages)
-	// go BarrierMonitor()
+	go BarrierMonitor()
 
 	go TTS()
 

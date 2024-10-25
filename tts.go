@@ -266,6 +266,9 @@ func TTS() {
 							userVoice = userConfig.Voice
 						}
 					}
+					if t.Author.Voice != "" {
+						userVoice = t.Author.Voice
+					}
 
 					message := VocalizeHTML(t.ttsMsg)
 					var r *http.Request
