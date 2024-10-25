@@ -31,16 +31,6 @@
       overflow: hidden;
     }
 
-    #title {
-      flex-grow: 1;
-      display: flex;
-      flex-wrap: wrap;
-    }
-
-    #title-input {
-      flex-grow: 1;
-    }
-
     #notification-input {
       flex-basis: 100%;
     }
@@ -104,10 +94,23 @@
     <a class="button" href="https://tv.algora.io/maf" target="_blank"><img src="algora.webp" style="width: auto; height: 1em; vertical-align: middle; margin-top: -7px"></a>
     <div class="expand">
     </div>
-    <div id="tabs"><button class="tab" data-tab="music">Music</button><button class="tab" data-tab="account">Account</button><button class="tab active" data-tab="chat">Chat</button></div>
+    <div id="tabs"><button class="tab" data-tab="admin">Admin</button><button class="tab" data-tab="music">Music</button><button class="tab" data-tab="account">Account</button><button class="tab active" data-tab="chat">Chat</button></div>
   </div>
   <hr>
   <div id="pages">
+    <div id="admin" style="display: grid; grid-template-rows: 1fr 1fr auto auto;">
+      <iframe style="border-color: darkorchid" src="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/edit-stream-info"></iframe>
+      <iframe style="border-color: darkorchid" src="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/activity-feed"></iframe>
+      <div id="title" style="display: flex; flex-grow: 1; flex-wrap: wrap;">
+        <input id="title-input" placeholder="Stream title" style="flex-grow: 1;">
+        <button id="title-submit" onclick="ws.send(JSON.stringify({ call: 'SetTitle', args: [document.getElementById('title-input').value] }));">Update</button>
+      </div>
+      <div style="display: grid; grid-auto-columns: 1fr; grid-auto-flow: column; text-align: center;">
+        <button onclick="ws.send(JSON.stringify({ call: 'MicroblogNotify', args: [] }));">Notify <img src="twitter.svg" style="height: 1em; vertical-align: baseline; margin-bottom: -5px"></button>
+        <a class="nobutton" href="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/edit-stream-info" target="_blank"><img src="twitch.svg" style="height: 1em; vertical-align: middle;">Dashboard</a>
+        <a class="nobutton" href="https://studio.youtube.com/channel/UCBPKTkmfqWCVnrEv8CBPrbg/livestreaming/dashboard?c=UCBPKTkmfqWCVnrEv8CBPrbg" target="_blank"><img src="youtube.svg" style="height: 1em; vertical-align: middle; margin-bottom: 6px">Studio</a>
+      </div>
+    </div>
     <div id="music">
       <div>Current track:
         <div id="audio"><span id="audio-highlight">No song playing</span><span id="audio-shadow">No song playing</span><span id="audio-fill">No song playing</span></div>

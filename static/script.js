@@ -9,6 +9,10 @@ function UpdateTabs() {
   document.querySelectorAll('.tab').forEach(tab => {
     let contentElementID = tab.dataset['tab'];
     let contentElement = document.getElementById(contentElementID);
+    if (!contentElement) {
+      console.warn('No content element for tab', tab);
+      return;
+    }
     contentElement.style.height = pagesHeight + 'px';
     if (tab.classList.contains('active')) {
       activeFound = true;
@@ -120,6 +124,10 @@ function Welcome(user) {
     userVoice = user.voice.split('.')[0];
   }
   voicesSpan.innerHTML = '<button class="selected" onclick="LoadVoices()">' + userVoice + '</button>';
+}
+// Makes the admin interface visible
+function AdminGranted() {
+  document.body.classList.add('admin');
 }
 let ecg_pings = {
   'Twitch': [],

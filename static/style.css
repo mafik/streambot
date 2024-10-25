@@ -57,6 +57,20 @@ html {
   transform: translateY(48px);
 }
 
+a.nobutton {
+  font-size: inherit;
+  border-radius: .3em;
+  padding: 0 .2em;
+  margin: .2em;
+  text-shadow: none;
+  font-family: "Audiowide";
+  color: white;
+}
+
+a.nobutton:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 button,
 input,
 .button {
@@ -127,6 +141,28 @@ body {
   overflow: hidden;
   margin: 0;
   padding: 0;
+}
+
+body:not(.admin) {
+  .tab[data-tab="admin"] {
+    display: none;
+  }
+
+  #admin {
+    display: none;
+  }
+}
+
+#admin {
+  iframe {
+    box-sizing: border-box;
+    border-width: 3px;
+    width: 100%;
+    height: 100%;
+    border-style: solid;
+    border-radius: 5px;
+    background: black;
+  }
 }
 
 #chat {
@@ -339,20 +375,6 @@ body {
   align-content: start;
 }
 
-#toolbar>.iframe-wrapper {
-  flex-grow: 1;
-  min-height: 350px;
-}
-
-#toolbar>.iframe-wrapper>iframe {
-  border-width: 3px;
-  width: calc(100% - 6px);
-  height: calc(100% - 6px);
-  border-style: solid;
-  border-radius: 5px;
-  background: black;
-}
-
 .break {
   flex-basis: 100%;
   height: 0;
@@ -375,16 +397,6 @@ body>hr {
   border: none;
   background-color: red;
   margin: 0;
-}
-
-#title {
-  flex-grow: 1;
-  display: flex;
-  flex-wrap: wrap;
-}
-
-#title-input {
-  flex-grow: 1;
 }
 
 #tabs {
@@ -422,6 +434,7 @@ code {
 #pages>div {
   position: absolute;
   transition: transform 300ms;
+  width: 100%;
 }
 
 #pages>div.translate-left {

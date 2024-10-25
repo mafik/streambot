@@ -402,6 +402,10 @@ func StartWebserver(OnNewClient chan *WebsocketClient) *WebsocketHub {
 		// new goroutines.
 		go client.writePump()
 		go client.readPump()
+
+		if client.admin {
+			client.Call("AdminGranted")
+		}
 	})
 
 	go func() {
