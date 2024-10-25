@@ -385,34 +385,37 @@ function OnChatMessage(chat_entry) {
   let author_name = AuthorName(chat_entry.author);
   text_span.innerHTML = chat_entry.html;
 
-  let control_panel = document.createElement('div');
-  control_panel.classList.add('control_panel');
+  if (document.body.classList.contains('admin')) {
 
-  let can_mute = 'twitch' in chat_entry.author || 'youtube' in chat_entry.author;
-  if (can_mute) {
-    let mute_button = document.createElement('button');
-    mute_button.textContent = '🤫';
-    mute_button.title = 'Mute ' + author_name;
-    mute_button.onclick = function () {
-      ws.send(JSON.stringify({ call: 'ToggleMuted', args: [chat_entry.author] }));
-    };
-    control_panel.appendChild(mute_button);
-  }
-  let can_ban = 'twitch' in chat_entry.author;
-  if (can_ban) {
-    let ban_button = document.createElement('button');
-    ban_button.textContent = '💀';
-    ban_button.title = 'Ban ' + author_name;
-    ban_button.onclick = function () {
-      ban_button.innerHTML = 'Ban <strong>' + author_name + '</strong>? ✅';
-      ban_button.title = 'Are you sure you want to ban ' + author_name + '?';
-      ban_button.onclick = function () {
-        ws.send(JSON.stringify({ call: 'Ban', args: [chat_entry.author] }));
+    let control_panel = document.createElement('div');
+    control_panel.classList.add('control_panel');
+
+    let can_mute = 'twitch' in chat_entry.author || 'youtube' in chat_entry.author;
+    if (can_mute) {
+      let mute_button = document.createElement('button');
+      mute_button.textContent = '🤫';
+      mute_button.title = 'Mute ' + author_name;
+      mute_button.onclick = function () {
+        ws.send(JSON.stringify({ call: 'ToggleMuted', args: [chat_entry.author] }));
       };
-    };
-    control_panel.appendChild(ban_button);
+      control_panel.appendChild(mute_button);
+    }
+    let can_ban = 'twitch' in chat_entry.author;
+    if (can_ban) {
+      let ban_button = document.createElement('button');
+      ban_button.textContent = '💀';
+      ban_button.title = 'Ban ' + author_name;
+      ban_button.onclick = function () {
+        ban_button.innerHTML = 'Ban <strong>' + author_name + '</strong>? ✅';
+        ban_button.title = 'Are you sure you want to ban ' + author_name + '?';
+        ban_button.onclick = function () {
+          ws.send(JSON.stringify({ call: 'Ban', args: [chat_entry.author] }));
+        };
+      };
+      control_panel.appendChild(ban_button);
+    }
+    chat_log.appendChild(control_panel);
   }
-  chat_log.appendChild(control_panel);
   chat_log.appendChild(text_span);
 
   chat.insertBefore(chat_log, chat.firstChild);
