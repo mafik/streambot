@@ -26,9 +26,10 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
   - Chat logging to a file
 - High-quality TTS for chat messages with stylized voices
   - Mindful delay of TTS messages while speaking
-  - Stop TTS playback when user is muted
+  - Immediately stop TTS playback when user is muted by a moderator
+  - Automatic detection of non-English messages
   - Users can change their voices using viewer panel (see below)
-- Control panel available by opening `control.html` (locally or through `http://IP:3447/control.html`)
+- Control panel available for clients from the local network
   - Button for muting TTS for specific users
   - Button for banning users on Twitch
   - Field for changing stream title on YT and Twitch
