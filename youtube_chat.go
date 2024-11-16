@@ -253,6 +253,7 @@ func FetchChatMessages(initialContinuationInfo string, ytCfg YtCfg) ([]ChatEntry
 					chatMessage.terminalMsg += run.Text
 					chatMessage.HTML += html.EscapeString(run.Text)
 					chatMessage.OriginalMessage += run.Text
+					chatMessage.textOnly += run.Text
 				} else {
 					if run.Emoji.IsCustomEmoji {
 						numberOfThumbnails := len(run.Emoji.Image.Thumbnails)
