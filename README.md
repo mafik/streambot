@@ -32,9 +32,9 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
 - Control panel available for clients from the local network
   - Button for muting TTS for specific users
   - Button for banning users on Twitch
+  - Button for deleting individual messages
   - Field for changing stream title on YT and Twitch
   - Iframes with YouTube & Twitch panels: stream health, stream info, activity feed (needs [CORS unblock](https://chromewebstore.google.com/detail/cors-unblock/lfhmikememgdcahcdlaciloancbhjino))
-  - ***TODO**: button for deleting individual messages*
   - ***TODO**: button for timing users out*
   - ***TODO**: button for banning users on YT*
   - ***TODO**: counters with counts of viewers on YT and Twitch*
@@ -47,6 +47,7 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
 - Automatic streaming notifications
   - on Twitter
   - ***TODO**: on Mastodon*
+  - ***TODO**: on Bluesky*
 - On-stream alerts
   - Twitch follows & raids
   - TTS narrator reads out the alerts

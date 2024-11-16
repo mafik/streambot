@@ -27,6 +27,7 @@ type ChatEntry struct {
 	HTML             string `json:"html,omitempty"`
 	TwitchMessageID  string `json:"twitch_message_id,omitempty"`
 	YouTubeMessageID string `json:"youtube_message_id,omitempty"`
+	ID               int    `json:"id,omitempty"`
 	ttsMsg           string
 	timestamp        time.Time
 	terminalMsg      string
@@ -162,6 +163,16 @@ func MainOnChatEntry(t ChatEntry) {
 			return
 		}
 	}
+
+	// Assign ID
+	id_bytes, err := os.ReadFile("chat_id.txt")
+	id_int := 0
+	if err == nil {
+		fmt.Sscanf(string(id_bytes), "%d", &id_int)
+	}
+	id_int += 1
+	t.ID = id_int
+	os.WriteFile("chat_id.txt", []byte(fmt.Sprintf("%d", id_int)), 0644)
 
 	chat_log = append(chat_log, t)
 	if len(chat_log) > nChatMessages {

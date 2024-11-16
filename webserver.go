@@ -1,10 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
+	"os"
 	"slices"
 	"time"
 
@@ -267,6 +268,62 @@ var JavaScriptHandlers = map[string]JavaScriptHandler{
 		PostTweet(tweet)
 		fmt.Printf("Tweeted: %s\n", tweet)
 	},
+	"DeleteMessage": func(c *WebsocketClient, args ...json.RawMessage) {
+		if !c.admin {
+			return
+		}
+		var msg ChatEntry
+		err := json.Unmarshal(args[0], &msg)
+		if err != nil {
+			fmt.Println("Can't unmarshal message ID: ", err)
+			return
+		}
+		msg.DeleteUpstream()
+		if msg.ID != 0 {
+			MainChannel <- func() {
+				// Read chat_log.txt & remove message with ID == msg.ID
+				func() {
+					fmt.Println("Deleting message with ID", msg.ID)
+					src, err := os.Open("chat_log.txt")
+					if err != nil {
+						fmt.Println("Couldn't open chat_log.txt:", err)
+						return
+					}
+					defer src.Close()
+					dst, err := os.OpenFile("chat_log.txt.tmp", os.O_CREATE|os.O_WRONLY, 0644)
+					if err != nil {
+						fmt.Println("Couldn't open chat_log.txt.tmp:", err)
+						return
+					}
+					defer dst.Close()
+
+					scanner := bufio.NewScanner(src)
+					for scanner.Scan() {
+						entryText := scanner.Text()
+						entry, err := MakeChatEntry(entryText)
+						if err != nil {
+							fmt.Println("Couldn't parse chat entry:", err)
+							continue
+						}
+						if entry.ID == msg.ID {
+							continue
+						}
+						dst.WriteString(entryText + "\n")
+					}
+					if err := scanner.Err(); err != nil {
+						return
+					}
+				}()
+				// Replace chat_log.txt with chat_log.txt.tmp
+				os.Rename("chat_log.txt.tmp", "chat_log.txt")
+				// Re-read chat_log.txt
+				chat_log, _ = ReadLastChatLog()
+				for _, entry := range chat_log {
+					Webserver.Call("OnChatMessage", entry)
+				}
+			}
+		}
+	},
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -279,15 +336,13 @@ func (c *WebsocketClient) readPump() {
 		c.hub.unregister <- c
 		c.conn.Close()
 	}()
-	c.conn.SetReadLimit(512)
+	c.conn.SetReadLimit(2048)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
 		_, bytes, err := c.conn.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
-			}
+			fmt.Printf("error: %v\n", err)
 			break
 		}
 		var message JavaScriptMessage
@@ -376,7 +431,7 @@ func StartWebserver(OnNewClient chan *WebsocketClient) *WebsocketHub {
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			log.Println(err)
+			fmt.Println(err)
 			return
 		}
 		client := &WebsocketClient{hub: hub, conn: conn, send: make(chan []byte, 256)}
