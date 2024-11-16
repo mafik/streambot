@@ -16,7 +16,7 @@ type MonitorConfig struct {
 var monitorConfigs = []MonitorConfig{
 	{"vr", "Main"},
 	{"X1", "NANO"},
-	{"WALL-E", "WALL-E"},
+	// {"WALL-E", "WALL-E"},
 }
 
 func BarrierMonitor() {
