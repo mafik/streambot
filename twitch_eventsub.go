@@ -250,6 +250,7 @@ func TwitchEventSub() {
 								entry.terminalMsg += fragment.Text
 								entry.HTML += html.EscapeString(fragment.Text)
 								entry.ttsMsg += fragment.Text
+								entry.textOnly += fragment.Text
 							case "cheermote":
 								entry.terminalMsg += fmt.Sprintf("CHEER(prefix=%s, bits=%d tier=%d)", fragment.Cheermote.Prefix, fragment.Cheermote.Bits, fragment.Cheermote.Tier)
 								entry.HTML += fmt.Sprintf("TODO: support cheermotes (prefix=%s, bits=%d tier=%d)", fragment.Cheermote.Prefix, fragment.Cheermote.Bits, fragment.Cheermote.Tier)

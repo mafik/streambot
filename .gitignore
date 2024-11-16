@@ -3,3 +3,5 @@ voices
 *.txt
 *.exe
 *.log*
+.aider*
+.env

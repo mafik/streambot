@@ -414,6 +414,18 @@ function OnChatMessage(chat_entry) {
       };
       control_panel.appendChild(ban_button);
     }
+    let can_delete = 'twitch_message_id' in chat_entry || 'youtube_message_id' in chat_entry || 'id' in chat_entry;
+    if (can_delete) {
+      let delete_button = document.createElement('button');
+      delete_button.textContent = '🗑️';
+      delete_button.title = 'Delete message';
+      delete_button.onclick = function () {
+        chat_entry.original_message = "";
+        chat_entry.html = "";
+        ws.send(JSON.stringify({ call: 'DeleteMessage', args: [chat_entry] }));
+      };
+      control_panel.appendChild(delete_button);
+    }
     chat_log.appendChild(control_panel);
   }
   chat_log.appendChild(text_span);
