@@ -197,14 +197,14 @@ body:not(.admin) {
   position: relative;
   left: -1px;
   top: -1px;
-  background: -webkit-linear-gradient(#ffffbc, #e6bba5);
+  background: linear-gradient(#ffffbc, #e6bba5);
   -webkit-background-clip: text;
 }
 
 #audio-fill {
   position: absolute;
   left: 0;
-  background: -webkit-linear-gradient(#ffa11e, #e65a2f);
+  background: linear-gradient(#ffa11e, #e65a2f);
   -webkit-background-clip: text;
 }
 
