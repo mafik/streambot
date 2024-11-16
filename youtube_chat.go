@@ -104,8 +104,9 @@ type Actions struct {
 type Runs struct {
 	Text  string `json:"text,omitempty"`
 	Emoji struct {
-		EmojiId       string `json:"emojiId"`
-		IsCustomEmoji bool   `json:"isCustomEmoji,omitempty"`
+		EmojiId       string   `json:"emojiId"`
+		IsCustomEmoji bool     `json:"isCustomEmoji,omitempty"`
+		Shortcuts     []string `json:"shortcuts,omitempty"`
 		Image         struct {
 			Thumbnails []struct {
 				Url string `json:"url,omitempty"`
@@ -173,6 +174,8 @@ const (
 	YT_CHANNEL_ID      = "UCBPKTkmfqWCVnrEv8CBPrbg"
 	YOUTUBE_ICON       = `<img src="youtube.svg" class="emoji">`
 )
+
+var ytEmojiShortcutToHTML = make(map[string]string)
 
 func regexSearch(regex string, str string) []string {
 	r, _ := regexp.Compile(regex)
@@ -249,6 +252,14 @@ func FetchChatMessages(initialContinuationInfo string, ytCfg YtCfg) ([]ChatEntry
 			}
 
 			for _, run := range runs {
+				for _, shortcut := range run.Emoji.Shortcuts {
+					url := ""
+					numberOfThumbnails := len(run.Emoji.Image.Thumbnails)
+					if numberOfThumbnails > 0 {
+						url = run.Emoji.Image.Thumbnails[numberOfThumbnails-1].Url
+					}
+					ytEmojiShortcutToHTML[shortcut] = fmt.Sprintf(`<img src="%s" alt="YouTube emoji" class="emoji">`, url)
+				}
 				if run.Text != "" {
 					chatMessage.terminalMsg += run.Text
 					chatMessage.HTML += html.EscapeString(run.Text)
@@ -377,6 +388,11 @@ func GetYouTubeVideoID() string {
 	return <-youtubeVideoIdChan
 }
 
+func parseISO8601(timestamp string) time.Time {
+	t, _ := time.Parse(time.RFC3339, timestamp)
+	return t
+}
+
 var youtubeLiveChatID string
 
 func YouTubeChatBot() {
@@ -428,12 +444,32 @@ func YouTubeChatBot() {
 				MaxAge: 300},
 		}
 		AddCookies(customCookies)
-		continuation, cfg, error := ParseInitialData("https://www.youtube.com/watch?v=" + youtubeVideoId)
-		if error != nil {
-			youtubeColor.Println("Error in ParseInitialData:", error)
+		continuation, cfg, err := ParseInitialData("https://www.youtube.com/watch?v=" + youtubeVideoId)
+		if err != nil {
+			youtubeColor.Println("Error in ParseInitialData:", err)
 			continue
 		}
 		outerBackoff.Success()
+
+		// Get the initial nextPageToken
+		// We ignore the initial messages - they're likely already in the chat log
+		nextPageChan := make(chan string)
+		YouTubeBotChannel <- func(yt *youtube.Service) error {
+			call := yt.LiveChatMessages.List(youtubeLiveChatID, []string{"id", "snippet"})
+			call.MaxResults(2000)
+			resp, err := call.Do()
+			if err != nil {
+				nextPageChan <- ""
+				return err
+			}
+			nextPageChan <- resp.NextPageToken
+			return nil
+		}
+		nextPageToken := <-nextPageChan
+		if nextPageToken == "" {
+			youtubeColor.Println("Error getting initial nextPageToken")
+			continue
+		}
 
 		firstRequest := true
 		innerBackoff := backoff.Backoff{
@@ -443,13 +479,13 @@ func YouTubeChatBot() {
 		for {
 			innerBackoff.Attempt()
 			Webserver.Call("Ping", "YouTube")
-			chat, newContinuation, sleepMillis, error := FetchChatMessages(continuation, cfg)
-			if error == ErrLiveStreamOver {
+			chat, newContinuation, sleepMillis, err := FetchChatMessages(continuation, cfg)
+			if err == ErrLiveStreamOver {
 				youtubeColor.Println("Live stream over")
 				break
 			}
-			if error != nil {
-				youtubeColor.Println("Error in FetchChatMessages", error)
+			if err != nil {
+				youtubeColor.Println("Error in FetchChatMessages", err)
 				continue
 			}
 			innerBackoff.Success()
@@ -462,9 +498,53 @@ func YouTubeChatBot() {
 				continue
 			}
 
-			for _, entry := range chat {
-				MainChannel <- entry
+			if len(chat) > 0 {
+				// Hacky YT client detected new chat message - let's try to fetch it using the official API
+				YouTubeBotChannel <- func(yt *youtube.Service) error {
+					call := yt.LiveChatMessages.List(youtubeLiveChatID, []string{"id", "snippet", "authorDetails"})
+					call.PageToken(nextPageToken)
+					call.MaxResults(2000)
+					resp, err := call.Do()
+					if err != nil {
+						nextPageChan <- nextPageToken
+						return err
+					}
+					nextPageChan <- resp.NextPageToken
+					for _, item := range resp.Items {
+						if item.Snippet.Type != "textMessageEvent" {
+							continue
+						}
+
+						chatMessage := ChatEntry{
+							Author: User{
+								YouTubeUser: &YouTubeUser{
+									ChannelID: item.AuthorDetails.ChannelId,
+									Name:      item.AuthorDetails.DisplayName,
+									AvatarURL: item.AuthorDetails.ProfileImageUrl,
+								},
+							},
+							YouTubeMessageID: item.Id,
+							timestamp:        parseISO8601(item.Snippet.PublishedAt),
+						}
+
+						chatMessage.OriginalMessage = item.Snippet.TextMessageDetails.MessageText
+						chatMessage.HTML = html.EscapeString(chatMessage.OriginalMessage)
+						chatMessage.textOnly = chatMessage.OriginalMessage
+						for shortcut, emojiHtml := range ytEmojiShortcutToHTML {
+							chatMessage.HTML = strings.ReplaceAll(chatMessage.HTML, shortcut, emojiHtml)
+							chatMessage.textOnly = strings.ReplaceAll(chatMessage.textOnly, shortcut, "")
+						}
+						chatMessage.HTML = YOUTUBE_ICON + " " + chatMessage.Author.HTML() + ": " + chatMessage.HTML
+						chatMessage.terminalMsg = fmt.Sprintf("  %s: %s\n", chatMessage.Author.DisplayName(), chatMessage.OriginalMessage)
+						chatMessage.ttsMsg = chatMessage.textOnly
+						MainChannel <- chatMessage
+					}
+					return nil
+				}
+				nextPageToken = <-nextPageChan
+
 			}
+
 			if sleepMillis > 1000 {
 				sleepMillis = 1000
 			}

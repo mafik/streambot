@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -41,28 +40,6 @@ func (t ChatEntry) TryTTS() {
 		fmt.Println("TTS channel is full, dropping message")
 	}
 }
-func levenshteinDistance(a, b string) int {
-	aLen := len(a)
-	bLen := len(b)
-	arrSize := (aLen + 1) * (bLen + 1)
-	arr := make([]int, arrSize)
-	for i_a := 0; i_a <= aLen; i_a++ {
-		arr[i_a*(bLen+1)] = i_a
-	}
-	for i_b := 0; i_b <= bLen; i_b++ {
-		arr[i_b] = i_b
-	}
-	for i_a := 1; i_a <= aLen; i_a++ {
-		for i_b := 1; i_b <= bLen; i_b++ {
-			cost := 0
-			if a[i_a-1] != b[i_b-1] {
-				cost = 1
-			}
-			arr[i_a*(bLen+1)+i_b] = min(arr[(i_a-1)*(bLen+1)+i_b]+1, arr[i_a*(bLen+1)+i_b-1]+1, arr[(i_a-1)*(bLen+1)+i_b-1]+cost)
-		}
-	}
-	return arr[aLen*(bLen+1)+bLen]
-}
 
 func (t *ChatEntry) DeleteUpstream() {
 	if t.TwitchMessageID != "" {
@@ -82,37 +59,7 @@ func (t *ChatEntry) DeleteUpstream() {
 	}
 	if t.YouTubeMessageID != "" {
 		YouTubeBotChannel <- func(yt *youtube.Service) error {
-			ctx := context.Background()
-			liveChatMessageID := ""
-			bestDistance := 99999
-			// This is a very roundabout way of getting the message ID for deletion.
-			// It is necessary because the hacky way of getting YouTube chat reports different message IDs.
-			// It might be better to use the official API in tandem with the hacky way - when the hacky way reports a new message, the official API could be used to read it.
-			// This way the official API loop would sleep most of the time and not use up the quota.
-			// TODO(when the issues pile up): implement this approach
-			yt.LiveChatMessages.List(youtubeLiveChatID, []string{"id", "snippet"}).MaxResults(2000).Pages(ctx, func(resp *youtube.LiveChatMessageListResponse) error {
-				for _, msg := range resp.Items {
-					// msg.Snippet.DisplayMessage may ':'-surrounded emotes. Let's hope that edit distance
-					// is enough to identify the right message...
-					distance := levenshteinDistance(msg.Snippet.DisplayMessage, t.OriginalMessage)
-					if distance < bestDistance {
-						bestDistance = distance
-						liveChatMessageID = msg.Id
-					}
-					if distance == 0 {
-						return fmt.Errorf("target message found")
-					}
-				}
-				if len(resp.Items) < 2000 {
-					return fmt.Errorf("no new messages found") // error seems to be necessary to stop the loop
-				}
-				return nil
-			})
-			if liveChatMessageID == "" {
-				warn_color.Println("Couldn't delete Youtube message - unable to locate message in chat:", t.OriginalMessage)
-				return nil
-			}
-			return yt.LiveChatMessages.Delete(liveChatMessageID).Do()
+			return yt.LiveChatMessages.Delete(t.YouTubeMessageID).Do()
 		}
 	}
 }
