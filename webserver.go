@@ -257,16 +257,40 @@ var JavaScriptHandlers = map[string]JavaScriptHandler{
 			fmt.Println("Couldn't save users:", err)
 		}
 	},
+	"Post": func(c *WebsocketClient, args ...json.RawMessage) {
+		if !c.admin {
+			return
+		}
+		var message string
+		err := json.Unmarshal(args[0], &message)
+		if err != nil {
+			return
+		}
+		PostTweet(message)
+		PostBluesky(message)
+
+		entry := ChatEntry{
+			terminalMsg:     `📢 ` + message + `\n`,
+			HTML:            BOT_ICON + ` 📢 ` + message,
+			OriginalMessage: message,
+		}
+		MainChannel <- entry
+	},
 	"MicroblogNotify": func(c *WebsocketClient, args ...json.RawMessage) {
 		if !c.admin {
 			return
 		}
 
-		// Send Twitter notification
 		youtubeVideoIdLocal := GetYouTubeVideoID()
-		tweet := fmt.Sprintf("🔴 Live now: \"%s\"! 🎉🎉🎉\n\n📺 https://youtu.be/%s https://twitch.tv/maf_pl https://tv.algora.io/maf", twitchTitle, youtubeVideoIdLocal)
-		PostTweet(tweet)
-		fmt.Printf("Tweeted: %s\n", tweet)
+		message := fmt.Sprintf("🔴 Live now: \"%s\"! 🎉🎉🎉\n\n📺 https://youtu.be/%s https://twitch.tv/maf_pl https://tv.algora.io/maf", twitchTitle, youtubeVideoIdLocal)
+
+		// Send Twitter notification
+		PostTweet(message)
+		fmt.Printf("Tweeted: %s\n", message)
+
+		// Send Bluesky notification
+		PostBluesky(message)
+		fmt.Printf("Posted to Bluesky: %s\n", message)
 	},
 	"DeleteMessage": func(c *WebsocketClient, args ...json.RawMessage) {
 		if !c.admin {

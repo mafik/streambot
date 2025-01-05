@@ -101,6 +101,10 @@
     <div id="admin" style="display: grid; grid-template-rows: 1fr 1fr auto auto;">
       <iframe style="border-color: darkorchid" src="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/edit-stream-info"></iframe>
       <iframe style="border-color: darkorchid" src="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/activity-feed"></iframe>
+      <div id="post" style="display: flex; flex-grow: 1; flex-wrap: wrap;">
+        <input id="post-input" placeholder="Post message" style="flex-grow: 1;">
+        <button id="post-submit" onclick="ws.send(JSON.stringify({ call: 'Post', args: [document.getElementById('post-input').value] }));">Post</button>
+      </div>
       <div id="title" style="display: flex; flex-grow: 1; flex-wrap: wrap;">
         <input id="title-input" placeholder="Stream title" style="flex-grow: 1;">
         <button id="title-submit" onclick="ws.send(JSON.stringify({ call: 'SetTitle', args: [document.getElementById('title-input').value] }));">Update</button>
