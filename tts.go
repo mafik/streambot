@@ -215,7 +215,7 @@ func TTS() {
 					ttsColor.Println("Couldn't connect to vr to start AllTalk:", err)
 					continue
 				}
-				kittyPid, err = ssh.Exec("DISPLAY=:0 kitty /home/maf/Pulpit/Streaming/TTS/alltalk_tts/start_alltalk.sh  >/dev/null 2>&1 & ; echo $last_pid")
+				kittyPid, err = ssh.Exec("DISPLAY=" + x11_display + " kitty /home/maf/Pulpit/Streaming/TTS/alltalk_tts/start_alltalk.sh  >/dev/null 2>&1 & ; echo $last_pid")
 				ssh.Close()
 				if err != nil {
 					ttsColor.Println("Couldn't start AllTalk:", err)

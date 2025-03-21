@@ -140,9 +140,12 @@ func OBS() {
 						if input.Name != "Mic" {
 							continue
 						}
+						if len(input.Levels) == 0 {
+							continue
+						}
 						magnitude := max(input.Levels[0][0], input.Levels[1][0])
 						magnitudeDb := 20 * math.Log10(magnitude)
-						if magnitudeDb > -40 {
+						if magnitudeDb > -35 {
 							lastMicActivity = time.Now()
 							MicIsSilent.Store(false)
 						} else if time.Since(lastMicActivity) > 3*time.Second {

@@ -78,6 +78,8 @@ var chat_log []ChatEntry
 
 const nChatMessages = 20
 
+const x11_display = ":1"
+
 func ReadLastChatLog() ([]ChatEntry, error) {
 	file, err := os.Open("chat_log.txt")
 	if err != nil {
@@ -144,9 +146,30 @@ func MainOnChatEntry(t ChatEntry) {
 		return
 	}
 
+	msgCount := 0
+	for _, chat_entry := range chat_log {
+		if chat_entry.Author.Key() == t.Author.Key() {
+			msgCount++
+		}
+	}
+
+	var detectionThreshold float64
+	switch msgCount {
+	case 0:
+		detectionThreshold = 0.7
+	case 1:
+		detectionThreshold = 0.8
+	case 2:
+		detectionThreshold = 0.9
+	case 3:
+		detectionThreshold = 0.95
+	default:
+		detectionThreshold = 0.99
+	}
+
 	if len(t.textOnly) >= 5 {
 		polishConfidence := linguaDetector.ComputeLanguageConfidence(t.textOnly, lingua.Polish)
-		if polishConfidence > 0.7 {
+		if polishConfidence > detectionThreshold {
 			fmt.Printf("Blocking likely Polish message: \"%s\" (confidence %f)\n", t.textOnly, polishConfidence)
 			t.DeleteUpstream()
 			currentTime := time.Now()
@@ -209,6 +232,7 @@ func NetworkSetup() {
 		warn_color.Println("Couldn't get external IP:", err)
 	}
 	publicIP = ip.String()
+	println("Public IP:", publicIP)
 
 	server, _ := net.ResolveTCPAddr("tcp", "google.com:80")
 	client, _ := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", webserverPort))

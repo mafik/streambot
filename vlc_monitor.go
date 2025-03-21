@@ -39,7 +39,7 @@ func VlcMonitor(audioMessages chan string) {
 			}
 			for {
 				vlcBackoff.Attempt()
-				output, err := vlcSsh.Exec("DISPLAY=:0 xdotool search --all --name \"VLC media player\"")
+				output, err := vlcSsh.Exec("DISPLAY=" + x11_display + " xdotool search --all --name \"VLC media player\"")
 				// Find ID of the VLC window
 				if err != nil {
 					if _, ok := errors.Unwrap(err).(*ssh.ExitError); ok {
@@ -48,7 +48,7 @@ func VlcMonitor(audioMessages chan string) {
 							col.Println(output)
 						}
 						col.Println("VLC window not found, starting VLC...")
-						vlcPid, err = vlcSsh.Exec("DISPLAY=:0 vlc /mnt/hdd8tb/AutomatLivestreams/archive/Music >/dev/null 2>&1 & ; echo $last_pid")
+						vlcPid, err = vlcSsh.Exec("DISPLAY=" + x11_display + " vlc /mnt/hdd8tb/AutomatLivestreams/archive/Music >/dev/null 2>&1 & ; echo $last_pid")
 						if err != nil {
 							col.Println("Couldn't start vlc:", err)
 							break
@@ -73,7 +73,7 @@ func VlcMonitor(audioMessages chan string) {
 				lastAudioMessage := ""
 				for {
 					// Get the title of the VLC window
-					wmName, err := vlcSsh.Exec("DISPLAY=:0 xprop -id " + windowID + " WM_NAME")
+					wmName, err := vlcSsh.Exec("DISPLAY=" + x11_display + " xprop -id " + windowID + " WM_NAME")
 					if err != nil {
 						col.Println("Couldn't get WM_NAME:", err)
 						break
