@@ -12,6 +12,7 @@ type User struct {
 	TwitchUser  *TwitchUser  `json:"twitch,omitempty"`
 	YouTubeUser *YouTubeUser `json:"youtube,omitempty"`
 	BotUser     *BotUser     `json:"bot,omitempty"`
+	DiscordUser *DiscordUser `json:"discord,omitempty"`
 	Ticket      string       `json:"ticket,omitempty"`
 	Voice       string       `json:"voice,omitempty"`
 	websockets  []*WebsocketClient
@@ -19,6 +20,7 @@ type User struct {
 
 var TwitchIndex = map[string]*User{}
 var YouTubeIndex = map[string]*User{}
+var DiscordIndex = map[string]*User{}
 var PasswordIndex = map[string]*User{}
 var TicketIndex = map[string]*User{}
 
@@ -27,7 +29,7 @@ var usersPath = path.Join(baseDir, "secrets", "users.json")
 func SaveUsers() error {
 	var usersToSave map[string]User = map[string]User{}
 	for password, user := range PasswordIndex {
-		worthSaving := user.TwitchUser != nil || user.YouTubeUser != nil || user.Voice != ""
+		worthSaving := user.TwitchUser != nil || user.YouTubeUser != nil || user.DiscordUser != nil || user.Voice != ""
 		if worthSaving {
 			// skip non-essential data
 			userToSave := *user
@@ -64,6 +66,9 @@ func LoadUsers() error {
 		if user.YouTubeUser != nil {
 			YouTubeIndex[user.YouTubeUser.Key()] = user
 		}
+		if user.DiscordUser != nil {
+			DiscordIndex[user.DiscordUser.Key()] = user
+		}
 	}
 	return nil
 }
@@ -94,6 +99,8 @@ func (u User) DisplayName() string {
 		return u.TwitchUser.DisplayName()
 	} else if u.YouTubeUser != nil {
 		return u.YouTubeUser.DisplayName()
+	} else if u.DiscordUser != nil {
+		return u.DiscordUser.DisplayName()
 	} else if u.BotUser != nil {
 		return u.BotUser.DisplayName()
 	}
@@ -105,6 +112,8 @@ func (u User) Key() string {
 		return u.TwitchUser.Key()
 	} else if u.YouTubeUser != nil {
 		return u.YouTubeUser.Key()
+	} else if u.DiscordUser != nil {
+		return u.DiscordUser.Key()
 	} else if u.BotUser != nil {
 		return u.BotUser.Key()
 	}
@@ -116,6 +125,8 @@ func (u User) HTML() string {
 	avatar_url := ""
 	if u.YouTubeUser != nil {
 		avatar_url = u.YouTubeUser.AvatarURL
+	} else if u.DiscordUser != nil && u.DiscordUser.Avatar != "" {
+		avatar_url = fmt.Sprintf("https://cdn.discordapp.com/avatars/%s/%s.png", u.DiscordUser.ID, u.DiscordUser.Avatar)
 	}
 	if avatar_url != "" {
 		ret += `<img src="` + avatar_url + `" class="avatar">`
@@ -137,6 +148,7 @@ func (u User) HTML() string {
 const (
 	TWITCH_KEY_PREFIX  = "Twitch:"
 	YOUTUBE_KEY_PREFIX = "YouTube:"
+	DISCORD_KEY_PREFIX = "Discord:"
 	BOT_KEY_PREFIX     = "Bot"
 )
 

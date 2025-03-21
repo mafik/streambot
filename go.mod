@@ -10,6 +10,7 @@ require (
 	github.com/abhinavxd/youtube-live-chat-downloader/v2 v2.0.3 // indirect
 	github.com/andreykaipov/goobs v1.4.1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
+	github.com/bwmarrin/discordgo v0.28.1 // indirect
 	github.com/dghubble/oauth1 v0.7.3 // indirect
 	github.com/ebitengine/oto/v3 v3.2.0 // indirect
 	github.com/ebitengine/purego v0.7.0 // indirect

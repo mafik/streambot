@@ -12,3 +12,8 @@ var baseDir string = func() string {
 	}
 	return path.Dir(filename)
 }()
+
+// secretsPath returns the path to a file in the secrets directory
+func secretsPath(filename string) string {
+	return path.Join(baseDir, "secrets", filename)
+}

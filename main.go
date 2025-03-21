@@ -27,6 +27,7 @@ type ChatEntry struct {
 	HTML             string `json:"html,omitempty"`
 	TwitchMessageID  string `json:"twitch_message_id,omitempty"`
 	YouTubeMessageID string `json:"youtube_message_id,omitempty"`
+	DiscordMessageID string `json:"discord_message_id,omitempty"`
 	ID               int    `json:"id,omitempty"`
 	ttsMsg           string
 	timestamp        time.Time
@@ -61,6 +62,12 @@ func (t *ChatEntry) DeleteUpstream() {
 	if t.YouTubeMessageID != "" {
 		YouTubeBotChannel <- func(yt *youtube.Service) error {
 			return yt.LiveChatMessages.Delete(t.YouTubeMessageID).Do()
+		}
+	}
+	if t.DiscordMessageID != "" {
+		err := DeleteDiscordMessage(discordChannelID, t.DiscordMessageID)
+		if err != nil {
+			warn_color.Println("Couldn't delete Discord message:", err)
 		}
 	}
 }
@@ -257,8 +264,14 @@ func main() {
 
 	go ObsGaze("Main", "Gaze")
 
+	// Discord
+	go InitDiscord()
+
+	// Twitch
 	go TwitchHelixBot()
 	go TwitchEventSub()
+
+	// YouTube Chat
 	go YouTubeBot()
 	go AudioPlayer()
 	go OBS()

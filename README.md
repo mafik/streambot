@@ -20,9 +20,10 @@ This repository contains a stream bot that I use when live coding on Twitch or Y
 - On-stream display of current VLC track
   - ***TODO**: move VLC music to the local machine*
 
-- On-stream display of aggregated chat from Twitch and YouTube
+- On-stream display of aggregated chat from Twitch, YouTube, and Discord
   - Twitch chat client with custom colors & emojis support
   - YouTube chat client with custom avatars & emojis support
+  - Discord chat integration with avatars support
   - Chat logging to a file
 - High-quality TTS for chat messages with stylized voices
   - Mindful delay of TTS messages while speaking
