@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html"
 	"streambot/backoff"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -13,6 +14,8 @@ import (
 var discordColor = color.New(color.FgMagenta)
 var discordBotToken string  // Discord bot token from secrets
 var discordChannelID string // Discord channel ID to monitor
+
+const DISCORD_ICON = `<img src="discord.svg" class="emoji">`
 
 type DiscordUser struct {
 	ID       string `json:"id"`
@@ -46,8 +49,10 @@ func DiscordChatBot() {
 			continue
 		}
 
-		// Set the intent to receive message content
-		dg.Identify.Intents = discordgo.IntentsGuildMessages
+		// Set the intents to receive message content and other necessary permissions
+		dg.Identify.Intents |= discordgo.IntentsGuildMessages
+		dg.Identify.Intents |= discordgo.IntentsMessageContent
+		dg.Identify.Intents |= discordgo.IntentsGuilds
 
 		// Register handler for messages
 		dg.AddHandler(messageHandler)
@@ -61,6 +66,7 @@ func DiscordChatBot() {
 		}
 
 		discordColor.Println("Discord bot is now running.")
+		discordColor.Printf("Monitoring Discord channel ID: %s\n", discordChannelID)
 
 		// Store the session globally so it can be used for message deletion
 		discordSession = dg
@@ -97,6 +103,13 @@ func DiscordChatBot() {
 
 // Handle incoming Discord messages
 func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
+	// Add recovery for any panics
+	defer func() {
+		if r := recover(); r != nil {
+			discordColor.Printf("Recovered from panic in Discord message handler: %v\n", r)
+		}
+	}()
+
 	// Ignore messages from the bot itself
 	if m.Author.ID == s.State.User.ID {
 		return
@@ -125,6 +138,24 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	content := m.Content
 	textOnly := content
 
+	// Handle attachments if any
+	if len(m.Attachments) > 0 {
+		for _, attachment := range m.Attachments {
+			if content != "" {
+				content += " "
+			}
+			content += fmt.Sprintf("[attachment: %s]", attachment.Filename)
+		}
+	}
+
+	// Handle mentions and replace them with proper names
+	for _, mention := range m.Mentions {
+		mentionText := fmt.Sprintf("<@%s>", mention.ID)
+		replacementText := fmt.Sprintf("@%s", mention.Username)
+		content = strings.Replace(content, mentionText, replacementText, -1)
+		textOnly = strings.Replace(textOnly, mentionText, replacementText, -1)
+	}
+
 	// Create chat entry
 	chatEntry := ChatEntry{
 		Author:           *user,
@@ -134,7 +165,7 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		textOnly:         textOnly,
 		ttsMsg:           VocalizeHTML(content),
 		terminalMsg:      fmt.Sprintf("%s: %s\n", user.DisplayName(), content),
-		HTML:             fmt.Sprintf(`<div class="message">%s: %s</div>`, user.HTML(), html.EscapeString(content)),
+		HTML:             fmt.Sprintf(DISCORD_ICON+` %s: %s`, user.HTML(), html.EscapeString(content)),
 	}
 
 	// Process message in the main channel
@@ -151,6 +182,15 @@ func DeleteDiscordMessage(channelID, messageID string) error {
 		return fmt.Errorf("Discord session not initialized")
 	}
 	return discordSession.ChannelMessageDelete(channelID, messageID)
+}
+
+// SendDiscordMessage sends a message to the configured Discord channel
+func SendDiscordMessage(message string) error {
+	if discordSession == nil {
+		return fmt.Errorf("Discord session not initialized")
+	}
+	_, err := discordSession.ChannelMessageSend(discordChannelID, message)
+	return err
 }
 
 var discordSession *discordgo.Session

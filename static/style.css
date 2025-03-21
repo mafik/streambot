@@ -55,6 +55,7 @@ html {
   margin: 0 .2em 0 .1em;
   margin-top: -100px;
   transform: translateY(48px);
+  max-height: 2em;
 }
 
 a.nobutton {
