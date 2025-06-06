@@ -85,7 +85,7 @@ var chat_log []ChatEntry
 
 const nChatMessages = 20
 
-const x11_display = ":1"
+const x11_display = ":0"
 
 func ReadLastChatLog() ([]ChatEntry, error) {
 	file, err := os.Open("chat_log.txt")
