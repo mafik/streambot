@@ -143,7 +143,10 @@ func OBS() {
 						if len(input.Levels) == 0 {
 							continue
 						}
-						magnitude := max(input.Levels[0][0], input.Levels[1][0])
+						magnitude := 0.0
+						for _, levels := range input.Levels {
+							magnitude = max(magnitude, levels[0])
+						}
 						magnitudeDb := 20 * math.Log10(magnitude)
 						if magnitudeDb > -35 {
 							lastMicActivity = time.Now()
