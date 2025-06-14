@@ -137,7 +137,7 @@ func OBS() {
 				switch t := obsEvent.(type) {
 				case *events.InputVolumeMeters:
 					for _, input := range t.Inputs {
-						if input.Name != "Mic" {
+						if input.Name != "Mic/Aux" {
 							continue
 						}
 						if len(input.Levels) == 0 {
@@ -164,5 +164,4 @@ func OBS() {
 			}
 		}
 	}
-
 }
