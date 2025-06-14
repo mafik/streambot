@@ -1,0 +1,64 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Go Architecture Patterns
+
+This project follows several Go architecture patterns for concurrent stream processing.
+
+## Channel-Based Architecture
+The application uses Go channels for communication between components:
+
+- `TTSChannel` - Queue for text-to-speech messages
+- `AudioPlayerChannel` - Queue for audio playback
+- `TwitchHelixChannel` - Queue for Twitch API operations
+- `YouTubeBotChannel` - Queue for YouTube API operations
+
+These channels are defined and used in [main.go](mdc:main.go) and various integration files.
+
+## Key Data Structures
+
+### ChatEntry
+Defined in [main.go](mdc:main.go), this is the core message structure that flows through the system:
+- Contains message content, author info, platform-specific IDs
+- Includes methods for TTS processing and message deletion
+- Used across all chat integration modules
+
+### User
+Defined in [user.go](mdc:user.go), represents a unified user across platforms:
+- Links Twitch, YouTube, and Discord accounts
+- Manages user preferences (TTS voice, etc.)
+- Handles authentication tickets
+
+### Alert
+Defined in [main.go](mdc:main.go), represents on-stream notifications:
+- Contains HTML content for display
+- Includes optional callback functions
+- Processed through the TTS and audio pipeline
+
+## Service Integration Pattern
+Each external service follows a similar pattern:
+1. **Connection Management** - Establish and maintain connections
+2. **Event Processing** - Convert service events to internal `ChatEntry` format
+3. **API Operations** - Queue operations through service-specific channels
+4. **Error Handling** - Graceful degradation with backoff strategies
+
+Examples:
+- [twitch_eventsub.go](mdc:twitch_eventsub.go) - WebSocket event handling
+- [youtube_chat.go](mdc:youtube_chat.go) - Polling-based chat retrieval
+- [discord.go](mdc:discord.go) - Discord gateway integration
+
+## Web Server Architecture
+[webserver.go](mdc:webserver.go) implements:
+- WebSocket connections for real-time updates
+- REST API endpoints for control panel
+- Static file serving for web interface
+- Cross-platform integration (serves content to OBS, browsers, etc.)
+
+## Concurrency Model
+- Each service integration runs in its own goroutine
+- Channel-based communication prevents race conditions
+- Backoff and retry logic in [backoff/](mdc:backoff) directory
+- Graceful shutdown handling across all components
+

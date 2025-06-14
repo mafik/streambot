@@ -1,0 +1,67 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Development Guide
+
+Guidelines for working with the StreamBot codebase.
+
+## Getting Started
+1. Review [README.md](mdc:README.md) for setup instructions
+2. Check [go.mod](mdc:go.mod) for dependencies
+3. Configure secrets in [secrets/](mdc:secrets) directory
+4. Review [docs/ARCHITECTURE.md](mdc:docs/ARCHITECTURE.md) for system design
+
+## Common Development Patterns
+
+### Adding New Chat Platforms
+Follow the pattern established in existing integrations:
+1. Create a new Go file (e.g., `newplatform.go`)
+2. Implement connection management and event handling
+3. Convert platform events to `ChatEntry` structs
+4. Send entries to the main processing pipeline via channels
+5. Add platform-specific user identification to [user.go](mdc:user.go)
+
+### Adding New TTS Voices
+1. Add voice files to [static/voices/](mdc:static/voices)
+2. Update voice selection in [static/script.js](mdc:static/script.js)
+3. Modify TTS processing in [tts.go](mdc:tts.go) if needed
+
+### Adding New Alerts
+1. Create `Alert` structs with appropriate HTML content
+2. Submit to `TTSChannel` for processing
+3. Audio files go in [static/](mdc:static) directory
+4. Update alert styling in [static/style.css](mdc:static/style.css)
+
+### Web Interface Changes
+- HTML templates: [static/chat.html](mdc:static/chat.html), [static/overlay.html](mdc:static/overlay.html)
+- Frontend logic: [static/script.js](mdc:static/script.js)
+- Styling: [static/style.css](mdc:static/style.css)
+- Backend WebSocket/API: [webserver.go](mdc:webserver.go)
+
+## Configuration Management
+- API keys and tokens: [secrets/](mdc:secrets) directory
+- User data: [secrets/users.json](mdc:secrets/users.json)
+- Runtime configuration: Various `.txt` files in root directory
+- Log files: `chat_log.txt`, `barrier.log`, etc.
+
+## Testing and Debugging
+- Terminal output uses color coding (defined in [main.go](mdc:main.go))
+- Chat logs are saved to `chat_log.txt`
+- Each service has its own error handling and logging
+- Use `go run .` for development
+
+## External Dependencies
+- **AllTalk TTS**: Required for text-to-speech functionality
+- **OBS Studio**: For streaming overlay integration  
+- **Tobii Eye Tracker**: For gaze tracking features
+- **Barrier**: For multi-screen cursor detection
+- **VLC**: For music playback monitoring
+
+## Security Considerations
+- Never commit files in [secrets/](mdc:secrets) directory
+- API tokens and keys are stored in separate files
+- User authentication uses ticket-based system
+- WebSocket connections validate user permissions
+

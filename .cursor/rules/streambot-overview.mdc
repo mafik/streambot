@@ -1,0 +1,52 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# StreamBot Overview
+
+This is a Go-based streaming bot application for Twitch/YouTube live streaming with TTS, chat aggregation, and automation features.
+
+## Main Entry Point
+The application starts in [main.go](mdc:main.go) which contains the core chat handling logic and network setup.
+
+## Key Components
+
+### Chat Integration Files
+- [twitch_eventsub.go](mdc:twitch_eventsub.go) - Twitch EventSub API integration for real-time events
+- [twitch_helix.go](mdc:twitch_helix.go) - Twitch Helix API for moderation actions
+- [youtube_chat.go](mdc:youtube_chat.go) - YouTube live chat integration
+- [discord.go](mdc:discord.go) - Discord chat integration
+
+### Audio & TTS
+- [tts.go](mdc:tts.go) - Text-to-speech functionality using AllTalk TTS
+- [audio_player.go](mdc:audio_player.go) - Audio playback management
+- [muted.go](mdc:muted.go) - Microphone muting detection for TTS pausing
+
+### External Service Integration
+- [obs.go](mdc:obs.go) - OBS Studio automation and control
+- [vlc_monitor.go](mdc:vlc_monitor.go) - VLC media player monitoring
+- [gaze.go](mdc:gaze.go) - Tobii eye tracker integration
+- [barrier_monitor.go](mdc:barrier_monitor.go) - Barrier screen sharing monitor
+
+### Social Media
+- [twitter.go](mdc:twitter.go) - Twitter API integration for stream notifications
+- [bluesky.go](mdc:bluesky.go) - Bluesky social media integration
+
+### Web Interface
+- [webserver.go](mdc:webserver.go) - Main web server for control panel and viewer interface
+- [static/](mdc:static) - Web assets including HTML, CSS, and JavaScript
+  - [static/chat.html](mdc:static/chat.html) - Chat display interface
+  - [static/overlay.html](mdc:static/overlay.html) - OBS overlay
+  - [static/script.js](mdc:static/script.js) - Frontend JavaScript
+  - [static/style.css](mdc:static/style.css) - Styling
+
+### User Management
+- [user.go](mdc:user.go) - User data structures and management
+- [secrets/users.json](mdc:secrets/users.json) - User data persistence
+
+## Configuration
+- [go.mod](mdc:go.mod) - Go module dependencies
+- [secrets/](mdc:secrets) - API keys and tokens (not in version control)
+- [README.md](mdc:README.md) - Setup instructions and feature overview
+

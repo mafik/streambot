@@ -1,0 +1,106 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# API Integrations Reference
+
+This project integrates with multiple streaming and social media APIs. Here's a guide to each integration.
+
+## Twitch Integration
+
+### Files
+- [twitch_eventsub.go](mdc:twitch_eventsub.go) - Real-time event subscriptions via WebSocket
+- [twitch_helix.go](mdc:twitch_helix.go) - Helix API for moderation and channel management
+
+### Key Features
+- Real-time chat messages via EventSub
+- Follow and raid notifications
+- Message deletion and user moderation
+- Channel information updates
+
+### Configuration
+- `secrets/twitch_client_id.txt` - Application client ID
+- `secrets/twitch_client_secret.txt` - Application client secret  
+- `secrets/twitch_access_token.txt` - User access token
+- `secrets/twitch_refresh_token.txt` - Token refresh capability
+
+## YouTube Integration
+
+### Files
+- [youtube_chat.go](mdc:youtube_chat.go) - Live chat polling and message handling
+- [youtube.go](mdc:youtube.go) - General YouTube API operations
+
+### Key Features
+- Live chat message retrieval via polling
+- Message deletion capabilities
+- Channel and stream information
+- Subscription notifications (TODO)
+
+### Configuration
+- `secrets/youtube_api_key.txt` - YouTube Data API key
+- `secrets/youtube_client_secret.json` - OAuth2 client configuration
+- `secrets/youtube_token.json` - OAuth2 access tokens
+
+## Discord Integration
+
+### Files
+- [discord.go](mdc:discord.go) - Discord bot and webhook integration
+
+### Key Features
+- Real-time message monitoring
+- Message forwarding between platforms
+- User avatar and emoji support
+- Message deletion capabilities
+
+### Configuration
+- `secrets/discord_token.txt` - Bot token
+- `secrets/discord_channel.txt` - Target channel ID
+
+## Social Media Notifications
+
+### Twitter/X
+- File: [twitter.go](mdc:twitter.go)
+- Features: Automated stream-live notifications
+- Config: `secrets/twitter_*` files for OAuth1 and OAuth2
+
+### Bluesky
+- File: [bluesky.go](mdc:bluesky.go)
+- Features: Stream notifications to Bluesky social network
+- Config: `secrets/bsky_login.txt`, `secrets/bsky_password.txt`
+
+## External Service Integrations
+
+### OBS Studio
+- File: [obs.go](mdc:obs.go)
+- Features: Scene switching, source control, recording management
+- Config: `secrets/obs_password.txt`
+
+### AllTalk TTS
+- File: [tts.go](mdc:tts.go)
+- Features: High-quality text-to-speech synthesis
+- Requires: External AllTalk TTS server installation
+
+### Tobii Eye Tracker
+- File: [gaze.go](mdc:gaze.go)
+- Features: Real-time gaze position tracking for stream overlay
+- Requires: Tobii hardware and SDK
+
+### VLC Media Player
+- File: [vlc_monitor.go](mdc:vlc_monitor.go)
+- Features: Current track monitoring and display
+- Integration: File system monitoring of VLC status
+
+## Authentication & Security
+- User authentication via ticket system (see [user.go](mdc:user.go))
+- API tokens stored securely in [secrets/](mdc:secrets/) directory
+- Rate limiting and error handling for all API calls
+- Graceful degradation when services are unavailable
+
+## Common Patterns
+All integrations follow similar patterns:
+1. **Initialization**: Load credentials and establish connections
+2. **Event Handling**: Convert platform events to internal `ChatEntry` format
+3. **Channel Communication**: Use Go channels for thread-safe operations
+4. **Error Recovery**: Implement backoff and retry logic
+5. **Logging**: Consistent error and status logging
