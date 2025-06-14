@@ -5,6 +5,7 @@ import (
 	"html"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"streambot/backoff"
@@ -142,6 +143,7 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	content := m.Content
 	textOnly := content
 	attachmentHTML := ""
+	attachmentText := ""
 
 	// Handle attachments if any
 	if len(m.Attachments) > 0 {
@@ -152,6 +154,7 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 				discordColor.Printf("Failed to download attachment %s: %v\n", attachment.Filename, err)
 				continue
 			}
+			attachmentText += fmt.Sprintf("[attachment %s]", attachment.Filename)
 			attachmentHTML += fmt.Sprintf("<a href=\"attachments/%s\">", filename)
 			// If it's an image, download it and add to HTML
 			if isImageFile(attachment.Filename) {
@@ -165,6 +168,31 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 				attachmentHTML += attachment.Filename
 			}
 			attachmentHTML += "</a>"
+		}
+	}
+
+	// Handle embeds (for GIFs from Tenor, Giphy, etc.)
+	if len(m.Embeds) > 0 {
+		content = ""
+		for _, embed := range m.Embeds {
+			attachmentText += fmt.Sprintf("[embed %s]", embed.URL)
+			// Check if the embed has an image (like GIFs)
+			if embed.Image != nil && embed.Image.URL != "" {
+				// Download the embed image (GIF)
+				filename, err := downloadDiscordEmbedImage(embed.Image, m.ID)
+				if err != nil {
+					discordColor.Printf("Failed to download embed image %s: %v\n", embed.Image.URL, err)
+					// If download fails, just show the image directly from the URL
+					attachmentHTML += fmt.Sprintf(`<img src="%s" class="attachment">`, embed.Image.URL)
+				} else {
+					// Use the downloaded image
+					attachmentHTML += fmt.Sprintf(`<img src="attachments/%s" class="attachment">`, filename)
+				}
+			}
+			// Check if the embed has a video (less common but possible)
+			if embed.Video != nil && embed.Video.URL != "" {
+				attachmentHTML += fmt.Sprintf(`<video src="%s" class="attachment" autoplay loop controls></video>`, embed.Video.URL)
+			}
 		}
 	}
 
@@ -184,7 +212,7 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		timestamp:        time.Now(),
 		textOnly:         textOnly,
 		ttsMsg:           VocalizeHTML(content),
-		terminalMsg:      fmt.Sprintf("%s: %s\n", user.DisplayName(), content),
+		terminalMsg:      fmt.Sprintf("%s: %s%s\n", user.DisplayName(), content, attachmentText),
 		HTML:             fmt.Sprintf(DISCORD_ICON+` %s: %s%s`, user.HTML(), html.EscapeString(content), attachmentHTML),
 	}
 
@@ -256,6 +284,54 @@ func downloadDiscordAttachment(attachment *discordgo.MessageAttachment, discordM
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("failed to save attachment: %w", err)
+	}
+
+	return filename, nil
+}
+
+// downloadDiscordEmbedImage downloads a Discord embed image (like GIF) to the static/attachments directory.
+// Returns filename and error.
+func downloadDiscordEmbedImage(embedImage *discordgo.MessageEmbedImage, discordMessageID string) (string, error) {
+	// Extract filename from URL or create one
+	parsedURL, err := url.Parse(embedImage.URL)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse embed image URL: %w", err)
+	}
+
+	// Get the file extension from the URL path
+	ext := filepath.Ext(parsedURL.Path)
+	if ext == "" {
+		// Default to .gif for Tenor/Giphy URLs
+		ext = ".gif"
+	}
+
+	// Create filename with the format {discord_message_id}_embed_{timestamp}{extension}
+	timestamp := time.Now().Unix()
+	filename := fmt.Sprintf("%s_embed_%d%s", discordMessageID, timestamp, ext)
+	localPath := filepath.Join("static", "attachments", filename)
+
+	// Download the file
+	resp, err := http.Get(embedImage.URL)
+	if err != nil {
+		return "", fmt.Errorf("failed to download embed image: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to download embed image, status: %d", resp.StatusCode)
+	}
+
+	// Create the file
+	file, err := os.Create(localPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to create file: %w", err)
+	}
+	defer file.Close()
+
+	// Copy the content
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to save embed image: %w", err)
 	}
 
 	return filename, nil
