@@ -449,7 +449,6 @@ code {
 }
 
 .attachment {
-  max-width: 300px;
   max-height: 200px;
   border-radius: 8px;
   margin: 4px 0;
