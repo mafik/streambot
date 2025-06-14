@@ -25,6 +25,10 @@ html {
   opacity: 0;
 }
 
+.chat_log a {
+  color: inherit;
+}
+
 .control_panel {
   position: absolute;
   font-size: .8em;
@@ -367,8 +371,6 @@ body:not(.admin) {
   height: 100%;
 }
 
-
-
 #toolbar {
   display: flex;
   flex-direction: row;
@@ -444,4 +446,15 @@ code {
 
 #pages>div.translate-right {
   transform: translateX(100%);
+}
+
+/* Discord image attachments */
+img.attachment {
+  max-width: 300px;
+  max-height: 200px;
+  border-radius: 8px;
+  margin: 4px 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  vertical-align: middle;
 }

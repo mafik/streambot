@@ -3,6 +3,10 @@ package main
 import (
 	"fmt"
 	"html"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
 	"streambot/backoff"
 	"strings"
 	"time"
@@ -137,14 +141,30 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	content := m.Content
 	textOnly := content
+	attachmentHTML := ""
 
 	// Handle attachments if any
 	if len(m.Attachments) > 0 {
 		for _, attachment := range m.Attachments {
-			if content != "" {
-				content += " "
+
+			filename, err := downloadDiscordAttachment(attachment, m.ID)
+			if err != nil {
+				discordColor.Printf("Failed to download attachment %s: %v\n", attachment.Filename, err)
+				continue
 			}
-			content += fmt.Sprintf("[attachment: %s]", attachment.Filename)
+			attachmentHTML += fmt.Sprintf("<a href=\"attachments/%s\">", filename)
+			// If it's an image, download it and add to HTML
+			if isImageFile(attachment.Filename) {
+				if err != nil {
+					discordColor.Printf("Failed to download attachment %s: %v\n", attachment.Filename, err)
+				} else {
+					// Convert to web path (replace backslashes with forward slashes for web)
+					attachmentHTML += fmt.Sprintf(`<img src="attachments/%s" class="attachment">`, filename)
+				}
+			} else {
+				attachmentHTML += attachment.Filename
+			}
+			attachmentHTML += "</a>"
 		}
 	}
 
@@ -165,7 +185,7 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		textOnly:         textOnly,
 		ttsMsg:           VocalizeHTML(content),
 		terminalMsg:      fmt.Sprintf("%s: %s\n", user.DisplayName(), content),
-		HTML:             fmt.Sprintf(DISCORD_ICON+` %s: %s`, user.HTML(), html.EscapeString(content)),
+		HTML:             fmt.Sprintf(DISCORD_ICON+` %s: %s%s`, user.HTML(), html.EscapeString(content), attachmentHTML),
 	}
 
 	// Process message in the main channel
@@ -194,6 +214,52 @@ func SendDiscordMessage(message string) error {
 }
 
 var discordSession *discordgo.Session
+
+// isImageFile checks if a filename represents an image file
+func isImageFile(filename string) bool {
+	ext := strings.ToLower(filepath.Ext(filename))
+	imageExts := []string{".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"}
+	for _, imgExt := range imageExts {
+		if ext == imgExt {
+			return true
+		}
+	}
+	return false
+}
+
+// downloadDiscordAttachment downloads a Discord attachment to the static/attachments directory.
+// Returns filename and error.
+func downloadDiscordAttachment(attachment *discordgo.MessageAttachment, discordMessageID string) (string, error) {
+	// Create filename with the format {discord_message_id}_{attachment_name}
+	filename := fmt.Sprintf("%s_%s", discordMessageID, attachment.Filename)
+	localPath := filepath.Join("static", "attachments", filename)
+
+	// Download the file
+	resp, err := http.Get(attachment.URL)
+	if err != nil {
+		return "", fmt.Errorf("failed to download attachment: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to download attachment, status: %d", resp.StatusCode)
+	}
+
+	// Create the file
+	file, err := os.Create(localPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to create file: %w", err)
+	}
+	defer file.Close()
+
+	// Copy the content
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to save attachment: %w", err)
+	}
+
+	return filename, nil
+}
 
 // LoadDiscordAuth loads Discord authentication information from secrets file
 func LoadDiscordAuth() error {

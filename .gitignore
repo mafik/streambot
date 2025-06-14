@@ -5,3 +5,4 @@ voices
 *.log*
 .aider*
 .env
+static/attachments/
