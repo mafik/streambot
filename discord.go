@@ -128,7 +128,7 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Convert Discord message to the standard ChatEntry format
 	discordUser := DiscordUser{
 		ID:       m.Author.ID,
-		Username: m.Author.Username,
+		Username: m.Author.GlobalName,
 		Avatar:   m.Author.Avatar,
 	}
 
