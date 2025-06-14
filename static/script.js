@@ -119,6 +119,13 @@ function Welcome(user) {
   } else {
     document.getElementById('youtube-link').innerHTML = 'Not linked';
   }
+  if (user.discord) {
+    let avatarURL = user.discord.avatar ? 'https://cdn.discordapp.com/avatars/' + user.discord.id + '/' + user.discord.avatar + '.png' : '';
+    let avatarHTML = avatarURL ? '<img class="avatar" src="' + avatarURL + '">' : '';
+    document.getElementById('discord-link').innerHTML = avatarHTML + user.discord.username;
+  } else {
+    document.getElementById('discord-link').innerHTML = 'Not linked';
+  }
   let voicesSpan = document.getElementById('voices');
   if (user.voice) {
     userVoice = user.voice.split('.')[0];
