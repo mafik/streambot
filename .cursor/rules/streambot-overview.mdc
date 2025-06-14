@@ -1,11 +1,15 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 # StreamBot Overview
 
 This is a Go-based streaming bot application for Twitch/YouTube live streaming with TTS, chat aggregation, and automation features.
+
+## Building
+The application can be built with: `go build .`
+Once the application is built, it can be executed like so: `.\streambot.exe`
 
 ## Main Entry Point
 The application starts in [main.go](mdc:main.go) which contains the core chat handling logic and network setup.
