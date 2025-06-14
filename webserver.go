@@ -437,6 +437,7 @@ func StartWebserver(OnNewClient chan *WebsocketClient) *WebsocketHub {
 	}()
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	http.Handle("/attachments/", http.StripPrefix("/attachments/", http.FileServer(http.Dir("./attachments"))))
 
 	http.HandleFunc("/twitch-auth", OnTwitchAuth)
 	http.HandleFunc("/webhook/twitch", OnTwitchWebhook)

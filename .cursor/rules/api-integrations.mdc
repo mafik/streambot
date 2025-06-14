@@ -1,7 +1,7 @@
 ---
-description:
-globs:
-alwaysApply: false
+description: 
+globs: 
+alwaysApply: true
 ---
 # API Integrations Reference
 
@@ -93,7 +93,7 @@ This project integrates with multiple streaming and social media APIs. Here's a 
 
 ## Authentication & Security
 - User authentication via ticket system (see [user.go](mdc:user.go))
-- API tokens stored securely in [secrets/](mdc:secrets/) directory
+- API tokens stored securely in [secrets/](mdc:secrets) directory
 - Rate limiting and error handling for all API calls
 - Graceful degradation when services are unavailable
 
@@ -104,3 +104,4 @@ All integrations follow similar patterns:
 3. **Channel Communication**: Use Go channels for thread-safe operations
 4. **Error Recovery**: Implement backoff and retry logic
 5. **Logging**: Consistent error and status logging
+
