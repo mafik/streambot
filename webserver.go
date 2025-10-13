@@ -54,6 +54,87 @@ type callRequest struct {
 	Args []interface{} `json:"args"`
 }
 
+// Add near top of file
+type DeleteArgs struct {
+    ID               *int    `json:"id,omitempty"`
+    DiscordMessageID *string `json:"discord_message_id,omitempty"`
+    TwitchMessageID  *string `json:"twitch_message_id,omitempty"`
+    YouTubeMessageID *string `json:"youtube_message_id,omitempty"`
+}
+
+var chatByID = struct {
+    sync.RWMutex
+    m map[int]struct {
+        DiscordID *string
+        TwitchID  *string
+        YouTubeID *string
+    }
+}{m: make(map[int]struct {
+    DiscordID *string
+    TwitchID  *string
+    YouTubeID *string
+})}
+
+func broadcastJSON(v any) {
+    b, _ := json.Marshal(v)
+    // Replace this with your existing broadcast implementation
+    // Example:
+    // for c := range clients {
+    //     c.WriteMessage(websocket.TextMessage, b)
+    // }
+    _ = b
+}
+
+func handleDeleteChatMessage(raw json.RawMessage) (any, error) {
+    var a DeleteArgs
+    if err := json.Unmarshal(raw, &a); err != nil {
+        return nil, fmt.Errorf("invalid args: %w", err)
+    }
+    if a.ID == nil && a.DiscordMessageID == nil && a.TwitchMessageID == nil && a.YouTubeMessageID == nil {
+        return nil, fmt.Errorf("id or platform message id required")
+    }
+
+    var deleted struct {
+        ID               *int    `json:"id,omitempty"`
+        DiscordMessageID *string `json:"discord_message_id,omitempty"`
+        TwitchMessageID  *string `json:"twitch_message_id,omitempty"`
+        YouTubeMessageID *string `json:"youtube_message_id,omitempty"`
+    }
+
+    if a.ID != nil {
+        chatByID.RLock()
+        rec, ok := chatByID.m[*a.ID]
+        chatByID.RUnlock()
+        if !ok {
+            return nil, fmt.Errorf("message not found")
+        }
+        chatByID.Lock()
+        delete(chatByID.m, *a.ID)
+        chatByID.Unlock()
+        deleted.ID = a.ID
+        if rec.DiscordID != nil {
+            // deleteOnDiscord(*rec.DiscordID)
+        }
+        if rec.TwitchID != nil {
+            // deleteOnTwitch(*rec.TwitchID)
+        }
+        if rec.YouTubeID != nil {
+            // deleteOnYouTube(*rec.YouTubeID)
+        }
+    }
+
+    broadcastJSON(map[string]any{
+        "call": "OnChatMessageDeleted",
+        "args": []any{deleted},
+    })
+
+    return map[string]any{
+        "call": "OnOk",
+        "args": []any{map[string]string{"action": "DeleteChatMessage"}},
+    }, nil
+}
+
+
 func jsonCallRequest(function_name string, args ...interface{}) []byte {
 	request := callRequest{
 		Call: function_name,
