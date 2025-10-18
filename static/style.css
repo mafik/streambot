@@ -449,7 +449,7 @@ code {
 }
 
 .attachment {
-  max-height: 200px;
+  max-height: 300px;
   border-radius: 8px;
   margin: 4px 0;
   border: 1px solid rgba(255, 255, 255, 0.2);
