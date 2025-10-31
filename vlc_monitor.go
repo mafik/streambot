@@ -70,10 +70,11 @@ func VlcMonitor(audioMessages chan string) {
 			// if an extension is present we know that there is some song playing,
 			// otherwise we report "No song playing"
 			audioMessage := "No song playing"
-			dotIndex := strings.LastIndex(wmName, ".")
+			dotIndex := strings.LastIndex(wmName, " - ")
 			if dotIndex != -1 {
 				audioMessage = wmName[:dotIndex]
 				audioMessage = strings.TrimSpace(audioMessage)
+				audioMessage += " (listen on live.automat.org)"
 			}
 			if audioMessage != lastAudioMessage {
 				lastAudioMessage = audioMessage

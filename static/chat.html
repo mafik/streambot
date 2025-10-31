@@ -92,16 +92,13 @@
     <div class="break"></div>
     <a class="button canvas-bg" href="https://twitch.tv/maf_pl" target="_blank"><canvas id="ecg-Twitch" width="20" height="20"></canvas><img src="twitch.svg" style="height: 1em; vertical-align: middle;"></a>
     <a class="button canvas-bg" href="https://www.youtube.com/@MarekRogalski/streams" target="_blank"><canvas id="ecg-YouTube" width="20" height="20"></canvas><img src="youtube.svg" style="height: 1em; vertical-align: middle; margin-bottom: 6px"></a>
-    <a class="button" href="https://tv.algora.io/maf" target="_blank"><img src="algora.webp" style="width: auto; height: 1em; vertical-align: middle; margin-top: -7px"></a>
     <div class="expand">
     </div>
-    <div id="tabs"><button class="tab" data-tab="admin">Admin</button><button class="tab" data-tab="music">Music</button><button class="tab" data-tab="account">Account</button><button class="tab active" data-tab="chat">Chat</button></div>
+    <div id="tabs"><button class="tab" data-tab="admin">Admin</button><button class="tab" data-tab="info">Info</button><button class="tab" data-tab="account">Account</button><button class="tab active" data-tab="chat">Chat</button></div>
   </div>
   <hr>
   <div id="pages">
     <div id="admin" style="display: grid; grid-template-rows: 1fr 1fr auto auto;">
-      <iframe style="border-color: darkorchid" src="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/edit-stream-info"></iframe>
-      <iframe style="border-color: darkorchid" src="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/activity-feed"></iframe>
       <div id="post" style="display: flex; flex-grow: 1; flex-wrap: wrap;">
         <input id="post-input" placeholder="Post message" style="flex-grow: 1;">
         <button id="post-submit" onclick="ws.send(JSON.stringify({ call: 'Post', args: [document.getElementById('post-input').value] }));">Post</button>
@@ -116,11 +113,74 @@
         <a class="nobutton" href="https://studio.youtube.com/channel/UCBPKTkmfqWCVnrEv8CBPrbg/livestreaming/dashboard?c=UCBPKTkmfqWCVnrEv8CBPrbg" target="_blank"><img src="youtube.svg" style="height: 1em; vertical-align: middle; margin-bottom: 6px">Studio</a>
       </div>
     </div>
-    <div id="music">
-      <div>Current track:
-        <div id="audio"><span id="audio-highlight">No song playing</span><span id="audio-shadow">No song playing</span><span id="audio-fill">No song playing</span></div>
-      </div>
-      <iframe loading="lazy" style="border-radius: .5em; flex: 1 1 0;" src="//live.automat.org/archive/Music/"></iframe>
+    <div id="info">
+        <h2>What are we doing here?</h2>
+        <p>We're writing a game that can play other games. Basically an automation tool, but fun to use. Here is our current <a href="https://www.tldraw.com/f/yNXUP8lZIZlDN9W-44hT-?d=v-449.194.4287.2217.page">roadmap</a>.</p>
+
+        <p>You can check it out (and download a pretty but somewhat buggy development build) at <a href="https://automat.org">automat.org</a>.</p>
+
+      <h2>Schedule</h2>
+      <p>I'm streaming on <strong>Mon</strong>, <strong>Wed</strong> and <strong>Fri</strong> between <strong>11:00</strong> and <strong>15:00</strong> <a href="https://time.is/Warsaw">Warsaw Time</a> (same as most of Europe). I'm trying to keep an up-to-date <a href="https://www.twitch.tv/maf_pl/schedule">Twitch schedule</a>.</p>
+
+      <h2>Chat</h2>
+      <p>➤ This webpage cannot be used to post chat messages (yet). There are three places where chat messages can be posted from: <a href="https://www.youtube.com/@MarekRogalski/live">YouTube</a>, <a href="https://www.twitch.tv/maf_pl">Twitch</a> & <a href="https://discord.com/invite/MRfuBBvdjV">Discord</a> (#working channel).</p>
+      <p>➤ All chat is TTS-ed so prefer long-form comments instead of short exclamations</p>
+      <p>➤ Use English if possible</p>
+      <p>➤ We mostly talk about tech & Automat</p>
+      <p>➤ Tweak your TTS voice in the "Account" tab</p>
+
+      <h2>Links</h2>
+      <p>🌟 Star on GitHub: <a href="https://github.com/mafik/automat">github.com/mafik/automat</a></p>
+      <p>👾 Join Discord: <a href="https://discord.com/invite/MRfuBBvdjV">invite</a></p>
+
+      <p><strong>Progress reports:</strong></p>
+      <p>🦋 Bluesky: <a href="https://bsky.app/profile/mrogalski.eu">@mrogalski.eu</a></p>
+      <p>🦣 Mastodon: <a href="https://101010.pl/@maf">maf@101010.pl</a></p>
+
+      <p><strong>Stream notifications:</strong></p>
+      <p>🦋 Bluesky: <a href="https://bsky.app/profile/automat.org">@automat.org</a></p>
+      <p>𝕏 / Twitter: <a href="https://twitter.com/mafikpl">@mafikpl</a></p>
+
+      <details style="margin-left: 10px;">
+          <summary style="font-size: 1.5em; margin-top: .8em; font-weight: bold; cursor: pointer">Streaming Setup</summary>
+
+          <h2>Main PC:</h2>
+          <p><strong>OS</strong>: Gentoo Linux with chroot directories for other distributions - Ubuntu, Debian</p>
+          <p><strong>Motherboard</strong>: X670E Steel Legend</p>
+          <p><strong>CPU</strong>: AMD Ryzen 5 8500G</p>
+          <p><strong>RAM</strong>: 64GB GoodRam DDR4</p>
+          <p><strong>GPU</strong>: <a href="https://www.youtube.com/watch?v=w_KEnvhdxBM">Dell RTX 4090</a></p>
+          <p><strong>KVM software</strong>: <a href="https://github.com/debauchee/barrier">Barrier</a></p>
+
+          <h2>Windows PC:</h2>
+          <p>Thinkpad X1 Nano (Gen. 2)</p>
+          <p><strong>Software</strong>: OBS + Teleport plugin</p>
+
+          <h2>Streaming PC:</h2>
+          <p><strong>OS</strong> Windows 10</p>
+          <p><strong>GPU</strong> Nvidia 1080 (Gigabyte)</p>
+          <p><strong>RAM</strong> 64GB DDR3</p>
+          <p><strong>CPU</strong> Intel 7700k</p>
+          <p><strong>Capture</strong>cards*: Elgato HD60 (don't buy - only works on Windows), Elgato CamLink 4k, Unknown 1080p USB recorder</p>
+          <p><strong>Software</strong> OBS, <a href="https://github.com/mafik/streambot">Streambot</a></p>
+
+          <h2>Recording:</h2>
+          <p><strong>Main camera</strong>: Sony A7C (stock lens)</p>
+          <p><strong>Desk camera</strong>: GoPro Hero 4</p>
+          <p><strong>Microphone</strong>: HyperX QuadCast</p>
+          <p><strong>Light</strong>: Unknown USB ring light</p>
+      </details>
+
+      <h2>Music</h2>
+      <p>The stream uses copyrighted music, licensed from ZAiKS (a Polish copyright monopolist).</p>
+      <p>Unfortunately, both YouTube and Twitch allow copyright trolls to send fake takedown requests.</p>
+      <p>Because of their 3-strikes policy and negligence in validating copyright claims, audio streams on YouTube & Twitch are substituted with some free ambient sounds. Credits for those sounds goes to <a href="https://freesound.org/people/Boryslaw_Kozielski/">Borysaw Kozielski</a>.</p>
+
+      <p>Current track:
+        <span id="audio"><span id="audio-highlight">No song playing</span><span id="audio-shadow">No song playing</span><span id="audio-fill">No song playing</span></span>
+      </p>
+
+
     </div>
     <div id="account">
       <p>Paste this command into YouTube, Twitch, or Discord chat to authenticate:</p>
@@ -137,6 +197,17 @@
     </div>
     <div id="chat">Connecting...</div>
   </div>
+  <div class="window" id="livestream">
+      <div class="title">LIVE <button class="close">X</button>
+      </div><iframe
+            class="content"
+            id="stream"
+            src="https://owncast.automat.org/embed/video"
+            title="Stream"
+            height="350px" width="550px"
+            referrerpolicy="unsafe-url"
+            allowfullscreen>
+        </iframe></div>
   <script src="anime.min.js"></script>
   <script src="script.js"></script>
 </body>
