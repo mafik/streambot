@@ -160,6 +160,10 @@ func YouTubeChatBotGRPC() {
 			}
 			if err != nil {
 				youtubeColor.Printf("Failed to receive chat messages: %v\n", err)
+				if strings.Contains(err.Error(), "Unauthenticated") || strings.Contains(err.Error(), "PermissionDenied") {
+					youtubeColor.Println("Auth error detected, will refresh access token on next attempt")
+					accessToken = ""
+				}
 				break
 			}
 			Webserver.Call("Pong", "YouTube")
