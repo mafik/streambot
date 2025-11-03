@@ -13,6 +13,7 @@ import (
 	"github.com/andreykaipov/goobs/api/events"
 	"github.com/andreykaipov/goobs/api/events/subscriptions"
 	"github.com/andreykaipov/goobs/api/requests/scenes"
+	"github.com/andreykaipov/goobs/api/requests/ui"
 	"github.com/fatih/color"
 	"github.com/mitchellh/go-ps"
 )
@@ -45,6 +46,73 @@ func OBSSwitchScene(targetScene string) error {
 	return <-errChan
 }
 
+// Returns -1 if not found
+func FindMonitorIndex(obs *goobs.Client, displayName string) (int, error) {
+	monitorList, err := obs.Ui.GetMonitorList()
+	if err != nil {
+		return -1, err
+	}
+
+	// Find the monitor index by prefix match
+	// Note: OBS returns monitor names like "\\.\DISPLAY1(1)" or "VDD by MTT(2)"
+	for i, monitor := range monitorList.Monitors {
+		if len(monitor.MonitorName) >= len(displayName) &&
+			monitor.MonitorName[:len(displayName)] == displayName {
+			return i, nil
+		}
+	}
+
+	return -1, nil
+}
+
+func OpenSceneProjector(obs *goobs.Client, sceneName string, monitorIndex int) error {
+	_, err := obs.Ui.OpenSourceProjector(&ui.OpenSourceProjectorParams{
+		SourceName:   &sceneName,
+		MonitorIndex: &monitorIndex,
+	})
+	return err
+}
+
+func ShowAvailableMonitors(obs *goobs.Client) {
+	col := color.New(color.FgYellow)
+
+	monitorList, err := obs.Ui.GetMonitorList()
+	if err != nil {
+		col.Println("Couldn't get monitor list:", err)
+		return
+	}
+
+	col.Println("Available monitors:")
+	for i, monitor := range monitorList.Monitors {
+		col.Printf("  [%d] %s (Width: %d, Height: %d)\n", i, monitor.MonitorName, monitor.MonitorWidth, monitor.MonitorHeight)
+	}
+}
+
+func OpenPreview(obs *goobs.Client, sceneName string, monitorName string) error {
+	col := color.New(color.FgYellow)
+
+	monitorIndex, err := FindMonitorIndex(obs, monitorName)
+	if err != nil {
+		col.Println("Error finding monitor index for", monitorName, ":", err)
+		return err
+	}
+
+	if monitorIndex < 0 {
+		col.Println("Could not find display", monitorName)
+		ShowAvailableMonitors(obs)
+		return err
+	}
+
+	err = OpenSceneProjector(obs, sceneName, monitorIndex)
+	if err != nil {
+		col.Println("Couldn't open scene projector for", sceneName, ":", err)
+		return err
+	}
+
+	col.Println("Opened scene projector:", sceneName, "on", monitorName, "(index", monitorIndex, ")")
+	return nil
+}
+
 func OBS() {
 
 	col := color.New(color.FgYellow)
@@ -52,6 +120,7 @@ func OBS() {
 		Color:       col,
 		Description: "OBS",
 	}
+	openPreviews := false
 	for {
 		backoff.Attempt()
 
@@ -81,6 +150,7 @@ func OBS() {
 					col.Println("Couldn't start OBS:", err)
 					continue
 				}
+				openPreviews = true
 				col.Println("Starting OBS...")
 				// wait up to 30 seconds for OBS to start
 				for i := 0; i < 30; i++ {
@@ -90,6 +160,7 @@ func OBS() {
 						continue
 					}
 					probe.Disconnect()
+					break
 				}
 			}
 		}
@@ -111,6 +182,12 @@ func OBS() {
 		}
 		col.Println("Initial scene:", sceneResp.CurrentProgramSceneName)
 		OBSScene.Store(&sceneResp.CurrentProgramSceneName)
+
+		if openPreviews {
+			openPreviews = false
+			OpenPreview(obs, "VDD Mirror", `\\.\DISPLAY1`)
+			OpenPreview(obs, "Camera Clean", "VDD by MTT")
+		}
 
 		backoff.Success()
 
