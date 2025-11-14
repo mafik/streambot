@@ -229,10 +229,6 @@ body {
 }
 
 body:not(.admin) {
-    .tab[data-tab="admin"] {
-        display: none;
-    }
-
     #admin {
         display: none;
     }
@@ -480,11 +476,21 @@ body:not(.admin) {
     width: 100%;
 }
 
+@keyframes bgScroll {
+    0% {
+        background-position: 0px 0px;
+    }
+    100% {
+        background-position: 200px 0px;
+    }
+}
+
 body > hr {
-    flex: 0 0 4px;
+    flex: 0 0 10px;
     border: none;
-    background-color: red;
+    background: url("border.webp");
     margin: 0;
+    animation: bgScroll 20s linear infinite;
 }
 
 #tabs {
@@ -544,6 +550,11 @@ code {
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     vertical-align: middle;
+}
+
+#chat_tab {
+    display: flex;
+    flex-direction: column;
 }
 
 #info {

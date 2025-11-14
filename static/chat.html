@@ -94,25 +94,10 @@
     <a class="button canvas-bg" href="https://www.youtube.com/@MarekRogalski/streams" target="_blank"><canvas id="ecg-YouTube" width="20" height="20"></canvas><img src="youtube.svg" style="height: 1em; vertical-align: middle; margin-bottom: 6px"></a>
     <div class="expand">
     </div>
-    <div id="tabs"><button class="tab" data-tab="admin">Admin</button><button class="tab" data-tab="info">Info</button><button class="tab" data-tab="account">Account</button><button class="tab active" data-tab="chat">Chat</button></div>
+    <div id="tabs"><button class="tab" data-tab="info">Info</button><button class="tab" data-tab="account">Account</button><button class="tab active" data-tab="chat_tab">Chat</button></div>
   </div>
   <hr>
   <div id="pages">
-    <div id="admin" style="display: grid; grid-template-rows: 1fr 1fr auto auto;">
-      <div id="post" style="display: flex; flex-grow: 1; flex-wrap: wrap;">
-        <input id="post-input" placeholder="Post message" style="flex-grow: 1;">
-        <button id="post-submit" onclick="ws.send(JSON.stringify({ call: 'Post', args: [document.getElementById('post-input').value] }));">Post</button>
-      </div>
-      <div id="title" style="display: flex; flex-grow: 1; flex-wrap: wrap;">
-        <input id="title-input" placeholder="Stream title" style="flex-grow: 1;">
-        <button id="title-submit" onclick="ws.send(JSON.stringify({ call: 'SetTitle', args: [document.getElementById('title-input').value] }));">Update</button>
-      </div>
-      <div style="display: grid; grid-auto-columns: 1fr; grid-auto-flow: column; text-align: center;">
-        <button onclick="ws.send(JSON.stringify({ call: 'MicroblogNotify', args: [] }));">Notify <img src="twitter.svg" style="height: 1em; vertical-align: baseline; margin-bottom: -5px"></button>
-        <a class="nobutton" href="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/edit-stream-info" target="_blank"><img src="twitch.svg" style="height: 1em; vertical-align: middle;">Dashboard</a>
-        <a class="nobutton" href="https://studio.youtube.com/channel/UCBPKTkmfqWCVnrEv8CBPrbg/livestreaming/dashboard?c=UCBPKTkmfqWCVnrEv8CBPrbg" target="_blank"><img src="youtube.svg" style="height: 1em; vertical-align: middle; margin-bottom: 6px">Studio</a>
-      </div>
-    </div>
     <div id="info">
         <h2>What are we doing here?</h2>
         <p>We're writing a game that can play other games. Basically an automation tool, but fun to use. Here is our current <a href="https://www.tldraw.com/f/yNXUP8lZIZlDN9W-44hT-?d=v-449.194.4287.2217.page">roadmap</a>.</p>
@@ -195,7 +180,24 @@
       <p>Voice: <span id="voices" class="select"><button class="selected" onclick="LoadVoices()">default</button></span>
       </p>
     </div>
-    <div id="chat">Connecting...</div>
+    <div id="chat_tab">
+        <div id="admin" style="display: grid; grid-template-rows: 1fr 1fr auto auto;">
+            <div id="post" style="display: flex; flex-grow: 1; flex-wrap: wrap;">
+            <input id="post-input" placeholder="Post message" style="flex-grow: 1;">
+            <button id="post-submit" onclick="ws.send(JSON.stringify({ call: 'Post', args: [document.getElementById('post-input').value] }));">Post</button>
+            </div>
+            <div id="title" style="display: flex; flex-grow: 1; flex-wrap: wrap;">
+            <input id="title-input" placeholder="Stream title" style="flex-grow: 1;">
+            <button id="title-submit" onclick="ws.send(JSON.stringify({ call: 'SetTitle', args: [document.getElementById('title-input').value] }));">Update</button>
+            </div>
+            <div style="display: grid; grid-auto-columns: 1fr; grid-auto-flow: column; text-align: center;">
+            <button onclick="ws.send(JSON.stringify({ call: 'MicroblogNotify', args: [] }));">Notify <img src="twitter.svg" style="height: 1em; vertical-align: baseline; margin-bottom: -5px"></button>
+            <a class="nobutton" href="https://dashboard.twitch.tv/popout/u/maf_pl/stream-manager/edit-stream-info" target="_blank"><img src="twitch.svg" style="height: 1em; vertical-align: middle;">Dashboard</a>
+            <a class="nobutton" href="https://studio.youtube.com/channel/UCBPKTkmfqWCVnrEv8CBPrbg/livestreaming/dashboard?c=UCBPKTkmfqWCVnrEv8CBPrbg" target="_blank"><img src="youtube.svg" style="height: 1em; vertical-align: middle; margin-bottom: 6px">Studio</a>
+            </div>
+        </div>
+        <div id="chat">Connecting...</div>
+    </div>
   </div>
   <div class="window" id="livestream">
       <div class="title">LIVE <button class="close">X</button>
