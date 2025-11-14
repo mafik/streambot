@@ -88,22 +88,32 @@ func ShowAvailableMonitors(obs *goobs.Client) {
 	}
 }
 
-func OpenPreview(obs *goobs.Client, sceneName string, monitorName string) error {
+func OpenPreview(obs *goobs.Client, sceneName string, monitorNames []string) error {
 	col := color.New(color.FgYellow)
 
-	monitorIndex, err := FindMonitorIndex(obs, monitorName)
-	if err != nil {
-		col.Println("Error finding monitor index for", monitorName, ":", err)
-		return err
+	monitorIndex := -1
+	monitorName := ""
+	for _, name := range monitorNames {
+		idx, err := FindMonitorIndex(obs, name)
+		if err != nil {
+			col.Println("Error finding monitor index for", name, ":", err)
+			return err
+		}
+
+		if idx >= 0 {
+			monitorName = name
+			monitorIndex = idx
+			break
+		}
 	}
 
 	if monitorIndex < 0 {
-		col.Println("Could not find display", monitorName)
+		col.Println("Could not find display ", monitorNames[0])
 		ShowAvailableMonitors(obs)
-		return err
+		return nil
 	}
 
-	err = OpenSceneProjector(obs, sceneName, monitorIndex)
+	err := OpenSceneProjector(obs, sceneName, monitorIndex)
 	if err != nil {
 		col.Println("Couldn't open scene projector for", sceneName, ":", err)
 		return err
@@ -185,8 +195,8 @@ func OBS() {
 
 		if openPreviews {
 			openPreviews = false
-			OpenPreview(obs, "VDD Mirror", `\\.\DISPLAY1`)
-			OpenPreview(obs, "Camera Clean", "VDD by MTT")
+			OpenPreview(obs, "VDD Mirror", []string{`\\.\DISPLAY1`, `MPI7002`})
+			OpenPreview(obs, "Camera Clean", []string{"VDD by MTT"})
 		}
 
 		backoff.Success()
