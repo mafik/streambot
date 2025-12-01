@@ -12,7 +12,7 @@ import (
 
 const vlcDir = "C:\\Program Files\\VideoLAN\\VLC\\"
 const vlcExecutable = "vlc.exe"
-const musicPath = "C:\\Users\\User\\Music\\Music"
+const musicPath = "C:\\Users\\User\\Music\\Playlist.m3u"
 
 func findVlc() (windows.HWND, error) {
 	hwnd, err := FindWindow("VLC media player")
