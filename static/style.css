@@ -235,6 +235,8 @@ body:not(.admin) {
 }
 
 #admin {
+    display: grid;
+    grid-template-rows: 1fr 1fr auto auto;
     iframe {
         box-sizing: border-box;
         border-width: 3px;
