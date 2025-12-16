@@ -39,7 +39,7 @@ func SaveUsers() error {
 			usersToSave[password] = userToSave
 		}
 	}
-	bytes, err := json.Marshal(usersToSave)
+	bytes, err := json.MarshalIndent(usersToSave, "", "\t")
 	if err != nil {
 		return fmt.Errorf("couldn't marshal users to save: %w", err)
 	}
