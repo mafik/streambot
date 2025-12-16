@@ -62,13 +62,25 @@ func LoadUsers() error {
 	for _, user := range PasswordIndex {
 		user.IssueTicket()
 		if user.TwitchUser != nil {
-			TwitchIndex[user.TwitchUser.Key()] = user
+			if _, found := TwitchIndex[user.TwitchUser.Key()]; found {
+				user.TwitchUser = nil
+			} else {
+				TwitchIndex[user.TwitchUser.Key()] = user
+			}
 		}
 		if user.YouTubeUser != nil {
-			YouTubeIndex[user.YouTubeUser.Key()] = user
+			if _, found := YouTubeIndex[user.YouTubeUser.Key()]; found {
+				user.YouTubeUser = nil
+			} else {
+				YouTubeIndex[user.YouTubeUser.Key()] = user
+			}
 		}
 		if user.DiscordUser != nil {
-			DiscordIndex[user.DiscordUser.Key()] = user
+			if _, found := DiscordIndex[user.DiscordUser.Key()]; found {
+				user.DiscordUser = nil
+			} else {
+				DiscordIndex[user.DiscordUser.Key()] = user
+			}
 		}
 	}
 	return nil

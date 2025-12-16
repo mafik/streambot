@@ -130,25 +130,37 @@ func MainOnChatEntry(t ChatEntry) {
 			iSpace = len(t.OriginalMessage) - 1
 		}
 		ticket := t.OriginalMessage[iSpace+1:]
-		user, found := TicketIndex[ticket]
+		newSession, found := TicketIndex[ticket]
 		if !found {
 			return
 		}
 		if t.Author.TwitchUser != nil {
-			user.TwitchUser = t.Author.TwitchUser
-			TwitchIndex[user.TwitchUser.Key()] = user
+			// Sign out of the old session (if any)
+			if oldSession, found := TwitchIndex[t.Author.TwitchUser.Key()]; found {
+				oldSession.TwitchUser = nil
+			}
+			newSession.TwitchUser = t.Author.TwitchUser
+			TwitchIndex[newSession.TwitchUser.Key()] = newSession
 		}
 		if t.Author.YouTubeUser != nil {
-			user.YouTubeUser = t.Author.YouTubeUser
-			YouTubeIndex[user.YouTubeUser.Key()] = user
+			// Sign out of the old session (if any)
+			if oldSession, found := YouTubeIndex[t.Author.YouTubeUser.Key()]; found {
+				oldSession.YouTubeUser = nil
+			}
+			newSession.YouTubeUser = t.Author.YouTubeUser
+			YouTubeIndex[newSession.YouTubeUser.Key()] = newSession
 		}
 		if t.Author.DiscordUser != nil {
-			user.DiscordUser = t.Author.DiscordUser
-			DiscordIndex[user.DiscordUser.Key()] = user
+			// Sign out of the old session (if any)
+			if oldSession, found := DiscordIndex[t.Author.DiscordUser.Key()]; found {
+				oldSession.DiscordUser = nil
+			}
+			newSession.DiscordUser = t.Author.DiscordUser
+			DiscordIndex[newSession.DiscordUser.Key()] = newSession
 		}
-		user.IssueTicket() // invalidate the old ticket
-		for _, client := range user.websockets {
-			client.Call("Welcome", user)
+		newSession.IssueTicket() // invalidate the old ticket
+		for _, client := range newSession.websockets {
+			client.Call("Welcome", newSession)
 		}
 		err := SaveUsers()
 		if err != nil {
