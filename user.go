@@ -9,13 +9,14 @@ import (
 )
 
 type User struct {
-	TwitchUser  *TwitchUser  `json:"twitch,omitempty"`
-	YouTubeUser *YouTubeUser `json:"youtube,omitempty"`
-	BotUser     *BotUser     `json:"bot,omitempty"`
-	DiscordUser *DiscordUser `json:"discord,omitempty"`
-	Ticket      string       `json:"ticket,omitempty"`
-	Voice       string       `json:"voice,omitempty"`
-	websockets  []*WebsocketClient
+	TwitchUser        *TwitchUser  `json:"twitch,omitempty"`
+	YouTubeUser       *YouTubeUser `json:"youtube,omitempty"`
+	BotUser           *BotUser     `json:"bot,omitempty"`
+	DiscordUser       *DiscordUser `json:"discord,omitempty"`
+	Ticket            string       `json:"ticket,omitempty"`
+	Voice             string       `json:"voice,omitempty"`
+	NamePronunciation string       `json:"name_pronunciation,omitempty"`
+	websockets        []*WebsocketClient
 }
 
 var TwitchIndex = map[string]*User{}
@@ -29,7 +30,7 @@ var usersPath = path.Join(baseDir, "secrets", "users.json")
 func SaveUsers() error {
 	var usersToSave map[string]User = map[string]User{}
 	for password, user := range PasswordIndex {
-		worthSaving := user.TwitchUser != nil || user.YouTubeUser != nil || user.DiscordUser != nil || user.Voice != ""
+		worthSaving := user.TwitchUser != nil || user.YouTubeUser != nil || user.DiscordUser != nil || user.Voice != "" || user.NamePronunciation != ""
 		if worthSaving {
 			// skip non-essential data
 			userToSave := *user
@@ -94,6 +95,23 @@ func (u *User) EnsureTicket() {
 	}
 }
 
+func (u User) LoadSettings() *User {
+	if u.TwitchUser != nil {
+		if userConfig, found := TwitchIndex[u.TwitchUser.Key()]; found {
+			return userConfig
+		}
+	} else if u.YouTubeUser != nil {
+		if userConfig, found := YouTubeIndex[u.YouTubeUser.Key()]; found {
+			return userConfig
+		}
+	} else if u.DiscordUser != nil {
+		if userConfig, found := DiscordIndex[u.DiscordUser.Key()]; found {
+			return userConfig
+		}
+	}
+	return &u
+}
+
 func (u User) DisplayName() string {
 	if u.TwitchUser != nil {
 		return u.TwitchUser.DisplayName()
@@ -105,6 +123,13 @@ func (u User) DisplayName() string {
 		return u.BotUser.DisplayName()
 	}
 	return ""
+}
+
+func (u User) GetNamePronunciation() string {
+	if u.NamePronunciation != "" {
+		return u.NamePronunciation
+	}
+	return u.DisplayName()
 }
 
 func (u User) Key() string {

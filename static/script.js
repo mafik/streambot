@@ -143,6 +143,11 @@ function SetVoice(voice) {
   ws.send(JSON.stringify({ call: "SetVoice", args: [voice] }));
   LoadVoices();
 }
+function SetNamePronunciation(pronunciation) {
+  ws.send(
+    JSON.stringify({ call: "SetNamePronunciation", args: [pronunciation] }),
+  );
+}
 
 const chat = document.getElementById("chat");
 var password = localStorage.getItem("password");
@@ -230,6 +235,10 @@ function Welcome(user) {
     '<button class="selected" onclick="LoadVoices()">' +
     userVoice +
     "</button>";
+  let namePronunciationInput = document.getElementById("name-pronunciation");
+  if (user.name_pronunciation) {
+    namePronunciationInput.value = user.name_pronunciation;
+  }
 }
 // Makes the admin interface visible
 function AdminGranted() {

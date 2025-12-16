@@ -179,6 +179,8 @@
           <code>localStorage.password</code> to authenticate multiple browsers.</small></p>
       <p>Voice: <span id="voices" class="select"><button class="selected" onclick="LoadVoices()">default</button></span>
       </p>
+      <p>Name pronunciation: <input id="name-pronunciation" type="text" placeholder="Used by TTS, max 100 chars" size="30" onchange="SetNamePronunciation(this.value)">
+      </p>
     </div>
     <div id="chat_tab">
         <div id="admin">

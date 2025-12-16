@@ -255,28 +255,20 @@ func TTS() {
 						continue
 					}
 
+					author := t.Author.LoadSettings()
+					authorKey := author.Key()
+
 					userVoice := defaultVoiceCfg
-					if t.Author.TwitchUser != nil {
-						if userConfig, found := TwitchIndex[t.Author.TwitchUser.Key()]; found {
-							userVoice = userConfig.Voice
-						}
-					}
-					if t.Author.YouTubeUser != nil {
-						if userConfig, found := YouTubeIndex[t.Author.YouTubeUser.Key()]; found {
-							userVoice = userConfig.Voice
-						}
-					}
-					if t.Author.Voice != "" {
-						userVoice = t.Author.Voice
+					if author.Voice != "" {
+						userVoice = author.Voice
 					}
 
 					message := VocalizeHTML(t.ttsMsg)
 					var r *http.Request
-					authorKey := t.Author.Key()
 					if lastAuthor == authorKey {
 						r = ttsGenerateRequest(fmt.Sprintf("\"%s\"", message), userVoice, narratorVoiceCfg)
 					} else {
-						r = ttsGenerateRequest(fmt.Sprintf("* %s says: * \" %s \"", t.Author.DisplayName(), message), userVoice, narratorVoiceCfg)
+						r = ttsGenerateRequest(fmt.Sprintf("* %s says: * \" %s \"", author.GetNamePronunciation(), message), userVoice, narratorVoiceCfg)
 						lastAuthor = authorKey
 					}
 					wav, err := SynthesizeAllTalk(r)
@@ -287,7 +279,7 @@ func TTS() {
 					select {
 					case AudioPlayerChannel <- PlayMessage{
 						wavData: wav,
-						author:  &t.Author,
+						author:  author,
 					}:
 					default:
 						ttsColor.Println("Player is busy, dropping TTS message")

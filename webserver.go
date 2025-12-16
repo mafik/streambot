@@ -257,6 +257,25 @@ var JavaScriptHandlers = map[string]JavaScriptHandler{
 			fmt.Println("Couldn't save users:", err)
 		}
 	},
+	"SetNamePronunciation": func(c *WebsocketClient, args ...json.RawMessage) {
+		if c.user == nil {
+			return
+		}
+		var pronunciation string
+		err := json.Unmarshal(args[0], &pronunciation)
+		if err != nil {
+			return
+		}
+		// Limit length to prevent abuse
+		if len(pronunciation) > 100 {
+			pronunciation = pronunciation[:100]
+		}
+		c.user.NamePronunciation = pronunciation
+		err = SaveUsers()
+		if err != nil {
+			fmt.Println("Couldn't save users:", err)
+		}
+	},
 	"Post": func(c *WebsocketClient, args ...json.RawMessage) {
 		if !c.admin {
 			return
