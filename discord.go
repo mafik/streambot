@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"html"
 	"io"
@@ -21,29 +20,8 @@ import (
 var discordColor = color.New(color.FgMagenta)
 var discordBotToken string  // Discord bot token from secrets
 var discordChannelID string // Discord channel ID to monitor
-var tenorAPIKey string      // Tenor API key from secrets
 
 const DISCORD_ICON = `<img src="discord.svg" class="emoji">`
-
-// Tenor API v2 structures
-type TenorResponse struct {
-	Results []TenorGIF `json:"results"`
-}
-
-type TenorGIF struct {
-	ID           string                      `json:"id"`
-	Title        string                      `json:"title"`
-	MediaFormats map[string]TenorMediaFormat `json:"media_formats"` // Changed from "media" array to "media_formats" map
-	ItemURL      string                      `json:"itemurl"`
-}
-
-type TenorMediaFormat struct {
-	URL      string  `json:"url"`
-	Duration float64 `json:"duration"`
-	Preview  string  `json:"preview"`
-	Dims     []int   `json:"dims"`
-	Size     int     `json:"size"`
-}
 
 // URL patterns for GIF services
 var tenorURLPattern = regexp.MustCompile(`(?i)https?://tenor\.com/view/[^/\s]+-(\d+)`)
@@ -64,87 +42,40 @@ func (u DiscordUser) Key() string {
 	return DISCORD_KEY_PREFIX + u.ID
 }
 
-// fetchTenorGIF fetches GIF data from Tenor API v2 using the GIF ID
-func fetchTenorGIF(gifID string) (*TenorGIF, error) {
-	if tenorAPIKey == "" {
-		return nil, fmt.Errorf("Tenor API key not configured")
-	}
-
-	// Use Tenor API v2 endpoint (now called "posts" instead of "gifs")
-	// Include required client_key and country parameters for v2
-	apiURL := fmt.Sprintf("https://tenor.googleapis.com/v2/posts?ids=%s&key=%s&client_key=streambot&country=US", gifID, tenorAPIKey)
-
-	resp, err := http.Get(apiURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch from Tenor API: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Tenor API returned status %d", resp.StatusCode)
-	}
-
-	var tenorResp TenorResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tenorResp); err != nil {
-		return nil, fmt.Errorf("failed to decode Tenor response: %w", err)
-	}
-
-	if len(tenorResp.Results) == 0 {
-		return nil, fmt.Errorf("no GIF found with ID %s", gifID)
-	}
-
-	return &tenorResp.Results[0], nil
+// containsGIFServiceURL reports whether content links to a GIF service that
+// Discord is expected to unfurl into an embed.
+func containsGIFServiceURL(content string) bool {
+	return tenorURLPattern.MatchString(content) ||
+		giphyURLPattern.MatchString(content) ||
+		giphyMediaPattern.MatchString(content)
 }
 
-// detectAndProcessGIFURLs detects GIF service URLs in content and returns HTML for them
-func detectAndProcessGIFURLs(content string, messageID string) (string, string, error) {
-	var attachmentHTML string
-	var attachmentText string
-
-	// Check for Tenor URLs
-	if matches := tenorURLPattern.FindAllStringSubmatch(content, -1); len(matches) > 0 {
-		for _, match := range matches {
-			if len(match) > 1 {
-				gifID := match[1]
-				gif, err := fetchTenorGIF(gifID)
-				if err != nil {
-					discordColor.Printf("Failed to fetch Tenor GIF %s: %v\n", gifID, err)
-					continue
-				}
-
-				// Use the best quality GIF URL available from v2 media_formats map
-				var gifURL string
-				if gif.MediaFormats != nil {
-					// Try different formats in order of preference
-					if gifFormat, exists := gif.MediaFormats["gif"]; exists && gifFormat.URL != "" {
-						gifURL = gifFormat.URL
-					} else if mp4Format, exists := gif.MediaFormats["mp4"]; exists && mp4Format.URL != "" {
-						gifURL = mp4Format.URL
-					} else if webmFormat, exists := gif.MediaFormats["webm"]; exists && webmFormat.URL != "" {
-						gifURL = webmFormat.URL
-					}
-				}
-
-				if gifURL != "" {
-					// Create a fake embed image structure to reuse existing download logic
-					embedImage := &discordgo.MessageEmbedImage{
-						URL: gifURL,
-					}
-
-					filename, err := downloadDiscordEmbedImage(embedImage, messageID)
-					if err != nil {
-						discordColor.Printf("Failed to download Tenor GIF %s: %v\n", gifURL, err)
-						// Fallback to direct URL
-						attachmentHTML += fmt.Sprintf(`<img src="%s" class="attachment" title="%s">`, gifURL, gif.Title)
-					} else {
-						attachmentHTML += fmt.Sprintf(`<img src="attachments/%s" class="attachment" title="%s">`, filename, gif.Title)
-					}
-
-					attachmentText += fmt.Sprintf("[Tenor GIF: %s]", gif.ItemURL)
-				}
-			}
+// waitForMessageEmbeds re-fetches a message a few times, waiting for Discord
+// to unfurl its links into embeds. MESSAGE_CREATE usually arrives before the
+// unfurling completes, so the embeds only show up on a later fetch. Returns
+// nil if no embeds appeared within the polling window.
+func waitForMessageEmbeds(s *discordgo.Session, channelID, messageID string) []*discordgo.MessageEmbed {
+	for attempt := 0; attempt < 4; attempt++ {
+		time.Sleep(800 * time.Millisecond)
+		msg, err := s.ChannelMessage(channelID, messageID)
+		if err != nil {
+			discordColor.Printf("Failed to re-fetch message %s while waiting for embeds: %v\n", messageID, err)
+			return nil
+		}
+		if len(msg.Embeds) > 0 {
+			return msg.Embeds
 		}
 	}
+	return nil
+}
+
+// detectAndProcessGIFURLs is a fallback for GIF links that Discord didn't
+// unfurl into an embed. Giphy URLs map to predictable media URLs so they can
+// be rendered without an API; Tenor URLs can't (the Tenor API shuts down on
+// 2026-06-30), so they are left as plain text.
+func detectAndProcessGIFURLs(content string, messageID string) (string, string) {
+	var attachmentHTML string
+	var attachmentText string
 
 	// Check for Giphy URLs (basic support - Giphy API is more complex)
 	if matches := giphyURLPattern.FindAllStringSubmatch(content, -1); len(matches) > 0 {
@@ -156,11 +87,7 @@ func detectAndProcessGIFURLs(content string, messageID string) (string, string, 
 				// For now, construct the direct media URL (this is a simplified approach)
 				gifURL := fmt.Sprintf("https://media.giphy.com/media/%s/giphy.gif", gifID)
 
-				embedImage := &discordgo.MessageEmbedImage{
-					URL: gifURL,
-				}
-
-				filename, err := downloadDiscordEmbedImage(embedImage, messageID)
+				filename, err := downloadDiscordEmbedMedia(gifURL, messageID)
 				if err != nil {
 					discordColor.Printf("Failed to download Giphy GIF %s: %v\n", gifURL, err)
 					// Fallback to direct URL
@@ -180,11 +107,7 @@ func detectAndProcessGIFURLs(content string, messageID string) (string, string, 
 			gifURL := match[0]
 			discordColor.Printf("Detected direct Giphy media URL: %s\n", gifURL)
 
-			embedImage := &discordgo.MessageEmbedImage{
-				URL: gifURL,
-			}
-
-			filename, err := downloadDiscordEmbedImage(embedImage, messageID)
+			filename, err := downloadDiscordEmbedMedia(gifURL, messageID)
 			if err != nil {
 				discordColor.Printf("Failed to download Giphy media %s: %v\n", gifURL, err)
 				// Fallback to direct URL
@@ -197,7 +120,7 @@ func detectAndProcessGIFURLs(content string, messageID string) (string, string, 
 		}
 	}
 
-	return attachmentHTML, attachmentText, nil
+	return attachmentHTML, attachmentText
 }
 
 // Initialize the Discord session, connect to the server, and start listening for messages
@@ -340,24 +263,40 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// Handle embeds (for GIFs from Tenor, Giphy, etc.)
-	if len(m.Embeds) == 0 {
-		// Only process URLs if there are no embeds (meaning Discord hasn't processed them yet)
-		gifHTML, gifText, err := detectAndProcessGIFURLs(content, m.ID)
-		if err != nil {
-			discordColor.Printf("Error processing GIF URLs: %v\n", err)
-		} else if gifHTML != "" {
+	embeds := m.Embeds
+	if len(embeds) == 0 && containsGIFServiceURL(content) {
+		// Discord unfurls GIF links into embeds shortly after MESSAGE_CREATE;
+		// this handler runs in its own goroutine, so blocking here is fine.
+		embeds = waitForMessageEmbeds(s, m.ChannelID, m.ID)
+	}
+	if len(embeds) == 0 {
+		gifHTML, gifText := detectAndProcessGIFURLs(content, m.ID)
+		if gifHTML != "" {
 			content = ""
 			attachmentHTML += gifHTML
 			attachmentText += gifText
 		}
 	} else {
 		content = ""
-		for _, embed := range m.Embeds {
+		for _, embed := range embeds {
 			attachmentText += fmt.Sprintf("[embed %s]", embed.URL)
+			// GIF services unfurl to a silent looping MP4 ("gifv"); render it
+			// like a GIF rather than a video player
+			if embed.Type == discordgo.EmbedTypeGifv && embed.Video != nil && embed.Video.URL != "" {
+				filename, err := downloadDiscordEmbedMedia(embed.Video.URL, m.ID)
+				if err != nil {
+					discordColor.Printf("Failed to download embed video %s: %v\n", embed.Video.URL, err)
+					// If download fails, just play the video directly from the URL
+					attachmentHTML += fmt.Sprintf(`<video src="%s" class="attachment" autoplay loop muted playsinline></video>`, embed.Video.URL)
+				} else {
+					attachmentHTML += fmt.Sprintf(`<video src="attachments/%s" class="attachment" autoplay loop muted playsinline></video>`, filename)
+				}
+				continue
+			}
 			// Check if the embed has an image (like GIFs)
 			if embed.Image != nil && embed.Image.URL != "" {
 				// Download the embed image (GIF)
-				filename, err := downloadDiscordEmbedImage(embed.Image, m.ID)
+				filename, err := downloadDiscordEmbedMedia(embed.Image.URL, m.ID)
 				if err != nil {
 					discordColor.Printf("Failed to download embed image %s: %v\n", embed.Image.URL, err)
 					// If download fails, just show the image directly from the URL
@@ -465,13 +404,13 @@ func downloadDiscordAttachment(attachment *discordgo.MessageAttachment, discordM
 	return filename, nil
 }
 
-// downloadDiscordEmbedImage downloads a Discord embed image (like GIF) to the ./attachments/ directory.
+// downloadDiscordEmbedMedia downloads a Discord embed's media (GIF, MP4, etc.) to the ./attachments/ directory.
 // Returns filename and error.
-func downloadDiscordEmbedImage(embedImage *discordgo.MessageEmbedImage, discordMessageID string) (string, error) {
+func downloadDiscordEmbedMedia(mediaURL string, discordMessageID string) (string, error) {
 	// Extract filename from URL or create one
-	parsedURL, err := url.Parse(embedImage.URL)
+	parsedURL, err := url.Parse(mediaURL)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse embed image URL: %w", err)
+		return "", fmt.Errorf("failed to parse embed media URL: %w", err)
 	}
 
 	// Get the file extension from the URL path
@@ -487,14 +426,14 @@ func downloadDiscordEmbedImage(embedImage *discordgo.MessageEmbedImage, discordM
 	localPath := filepath.Join("attachments", filename)
 
 	// Download the file
-	resp, err := http.Get(embedImage.URL)
+	resp, err := http.Get(mediaURL)
 	if err != nil {
-		return "", fmt.Errorf("failed to download embed image: %w", err)
+		return "", fmt.Errorf("failed to download embed media: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to download embed image, status: %d", resp.StatusCode)
+		return "", fmt.Errorf("failed to download embed media, status: %d", resp.StatusCode)
 	}
 
 	// Create the file
@@ -507,7 +446,7 @@ func downloadDiscordEmbedImage(embedImage *discordgo.MessageEmbedImage, discordM
 	// Copy the content
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to save embed image: %w", err)
+		return "", fmt.Errorf("failed to save embed media: %w", err)
 	}
 
 	return filename, nil
@@ -524,13 +463,6 @@ func LoadDiscordAuth() error {
 	discordChannelID, err = ReadStringFromFile(secretsPath("discord_channel.txt"))
 	if err != nil {
 		return fmt.Errorf("couldn't read Discord channel ID: %w", err)
-	}
-
-	// Load Tenor API key (optional - if not present, GIF processing will be skipped)
-	tenorAPIKey, err = ReadStringFromFile(secretsPath("tenor_api_key.txt"))
-	if err != nil {
-		discordColor.Println("Tenor API key not found - GIF URL processing will be limited")
-		tenorAPIKey = "" // Clear any partial value
 	}
 
 	return nil
